@@ -182,13 +182,45 @@ jobs:
           APP_STORE_ISSUER_ID: ${{ secrets.APP_STORE_ISSUER_ID }}
           APP_STORE_PRIVATE_KEY: ${{ secrets.APP_STORE_PRIVATE_KEY }}
         run: |
-          if [ -n "$APP_STORE_PRIVATE_KEY" ]; then
-            echo "Publishing to TestFlight via Fastlane..."
-            cd ios
-            fastlane upload_to_testflight
-            cd ..
+          if [ -z "$APP_STORE_PRIVATE_KEY" ] || [ -z "$APP_STORE_KEY_ID" ] || [ -z "$APP_STORE_ISSUER_ID" ]; then
+            echo "❌ App Store Connect credentials missing, skipping upload."
+            exit 1
+          fi
+
+          # Setup Apple API private key in the standard directory expected by Apple tools
+          KEY_DIR="$HOME/.appstoreconnect/private_keys"
+          mkdir -p "$KEY_DIR"
+          node -e "
+            const fs = require('fs');
+            const path = require('path');
+            const os = require('os');
+            const key = (process.env.APP_STORE_PRIVATE_KEY || '').trim();
+            const keyId = (process.env.APP_STORE_KEY_ID || '').trim();
+            const target = path.join(os.homedir(), '.appstoreconnect', 'private_keys', 'AuthKey_' + keyId + '.p8');
+            fs.writeFileSync(target, key + '\n');
+            console.log('Saved Apple API Key to:', target, 'Size:', fs.statSync(target).size);
+          "
+          chmod 600 "$KEY_DIR/AuthKey_${APP_STORE_KEY_ID}.p8"
+
+          IPA_PATH=$(find build/ios/ipa -name "*.ipa" | head -n 1)
+          if [ -z "$IPA_PATH" ]; then
+            echo "❌ No .ipa file found in build/ios/ipa/"
+            ls -la build/ios/ || true
+            exit 1
+          fi
+
+          echo "Found signed IPA for upload: $IPA_PATH ($(ls -lh "$IPA_PATH" | awk '{print $5}'))"
+
+          echo "============================================="
+          echo "  UPLOADING TO TESTFLIGHT VIA XCRUN ALTOOL   "
+          echo "============================================="
+          if xcrun altool --upload-app -f "$IPA_PATH" -t ios --apiKey "$APP_STORE_KEY_ID" --apiIssuer "$APP_STORE_ISSUER_ID" --show-progress; then
+            echo "🎉 Successfully uploaded IPA to App Store Connect / TestFlight!"
           else
-            echo "⚠️ APP_STORE_PRIVATE_KEY secret not found, skipping TestFlight upload."
+            echo "⚠️ altool reported an issue, trying Fastlane pilot fallback..."
+            cd ios
+            fastlane upload_to_testflight key_file:"$KEY_DIR/AuthKey_${APP_STORE_KEY_ID}.p8" ipa:"../$IPA_PATH"
+            cd ..
           fi
 
       - name: 🧹 Clean up keychain
