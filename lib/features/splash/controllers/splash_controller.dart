@@ -1,5 +1,4 @@
 import 'package:geolocator/geolocator.dart';
-import 'package:location/location.dart';
 import 'package:stackfood_multivendor/api/api_client.dart';
 import 'package:stackfood_multivendor/common/enums/data_source_enum.dart';
 import 'package:stackfood_multivendor/common/widgets/custom_loader_widget.dart';
@@ -270,10 +269,9 @@ class SplashController extends GetxController implements GetxService {
   }
 
   Future<bool> _locationCheck() async {
-    Location location = Location();
-    bool serviceEnabled = await location.serviceEnabled();
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      serviceEnabled = await location.requestService();
+      serviceEnabled = await Geolocator.openLocationSettings();
     }
     return serviceEnabled;
   }
