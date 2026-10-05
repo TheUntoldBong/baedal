@@ -139,10 +139,14 @@ jobs:
       - name: 🔍 Display Build Errors
         if: failure()
         run: |
-          echo "============================================="
-          echo "         XCODE BUILD FAILURE LOGS            "
-          echo "============================================="
-          tail -n 120 xcode_build.log
+          if [ -f xcode_build.log ]; then
+            echo "============================================="
+            echo "         XCODE BUILD FAILURE LOGS            "
+            echo "============================================="
+            tail -n 120 xcode_build.log
+          else
+            echo "No xcode_build.log found (build step did not start)."
+          fi
 
       - name: 📄 Upload Build Log
         if: always()
