@@ -80,13 +80,25 @@ jobs:
             console.log('Decoded certificate size:', buf.length, 'bytes');
           "
 
-          # Import p12 into keychain
-          security import /tmp/certificate.p12 -k $KEYCHAIN_PATH -P "$P12_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security -A
+          # Convert p12 to legacy format for macOS Keychain compatibility (handles OpenSSL 3 PBKDF2/AES-256)
+          openssl pkcs12 -in /tmp/certificate.p12 -passin pass:"$P12_PASSWORD" -nodes -out /tmp/cert_combined.pem || true
+          if [ -f /tmp/cert_combined.pem ]; then
+            openssl pkcs12 -export -in /tmp/cert_combined.pem -inkey /tmp/cert_combined.pem -out /tmp/legacy_cert.p12 -passout pass:"$P12_PASSWORD" -legacy || true
+          fi
+
+          if [ -f /tmp/legacy_cert.p12 ]; then
+            echo "Importing legacy-compatible certificate into keychain..."
+            security import /tmp/legacy_cert.p12 -k $KEYCHAIN_PATH -P "$P12_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security -A
+          else
+            echo "Importing certificate into keychain..."
+            security import /tmp/certificate.p12 -k $KEYCHAIN_PATH -P "$P12_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security -A
+          fi
 
           # Allow codesign tool to access keychain without prompts
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH || true
 
           # Set as default keychain in search list
+          security default-keychain -s $KEYCHAIN_PATH
           security list-keychains -d user -s $KEYCHAIN_PATH $(security list-keychains -d user | sed -e 's/"//g')
 
           echo "=== Installed Signing Identities ==="
