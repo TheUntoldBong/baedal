@@ -5,7 +5,14 @@
 *.swp
 *.p8
 *.p12
+*.cer
+*.pem
+*.key
+*.csr
 *.mobileprovision
+*_base64.txt
+baedal_profile.plist
+dist_*
 .DS_Store
 .atom/
 .buildlog/

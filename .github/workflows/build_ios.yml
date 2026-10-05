@@ -1,4 +1,4 @@
-name: Build iOS App
+name: Build & Release iOS App to TestFlight
 
 on:
   workflow_dispatch:
@@ -6,8 +6,8 @@ on:
     branches: [ main, master ]
 
 jobs:
-  build-ios:
-    name: Build iOS IPA
+  build-release-ios:
+    name: Build & Publish iOS App
     runs-on: macos-15
 
     steps:
@@ -20,6 +20,11 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: 🟢 Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
       - name: ⚙️ Configure Flutter (Disable SPM, use CocoaPods)
         run: |
           flutter config --no-enable-swift-package-manager
@@ -30,6 +35,60 @@ jobs:
           flutter --version
           xcodebuild -version
           pod --version
+          fastlane --version
+
+      - name: 🔐 Install Apple Distribution Certificate into Keychain
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+        run: |
+          if [ -z "$BUILD_CERTIFICATE_BASE64" ]; then
+            echo "❌ BUILD_CERTIFICATE_BASE64 secret is missing. Cannot sign iOS app."
+            exit 1
+          fi
+
+          # Create temporary keychain
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
+          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> $GITHUB_ENV
+          echo "KEYCHAIN_PASSWORD=$KEYCHAIN_PASSWORD" >> $GITHUB_ENV
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+          # Import Apple Worldwide Developer Relations intermediate certificates
+          curl -sS https://www.apple.com/certificateauthority/AppleWWDRCAG3.cer -o /tmp/AppleWWDRCAG3.cer
+          security import /tmp/AppleWWDRCAG3.cer -k $KEYCHAIN_PATH -T /usr/bin/codesign
+
+          # Decode and import the p12 distribution certificate
+          echo "$BUILD_CERTIFICATE_BASE64" | base64 --decode > /tmp/certificate.p12
+          security import /tmp/certificate.p12 -k $KEYCHAIN_PATH -P "$P12_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+          # Add keychain to user keychain list
+          security list-keychains -d user -s $KEYCHAIN_PATH $(security list-keychains -d user | sed -e 's/"//g')
+          security find-identity -v -p codesigning $KEYCHAIN_PATH
+
+      - name: 📲 Install Provisioning Profile
+        env:
+          BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}
+          APP_STORE_KEY_ID: ${{ secrets.APP_STORE_KEY_ID }}
+          APP_STORE_ISSUER_ID: ${{ secrets.APP_STORE_ISSUER_ID }}
+          APP_STORE_PRIVATE_KEY: ${{ secrets.APP_STORE_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          if [ -n "$BUILD_PROVISION_PROFILE_BASE64" ]; then
+            echo "Installing provisioning profile from secret..."
+            echo "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/79e81f4f-1bab-4e7f-a10f-d565c2f3cbd9.mobileprovision
+            echo "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/Baedal\ AppStore\ Profile\ 2026.mobileprovision
+          elif [ -n "$APP_STORE_PRIVATE_KEY" ]; then
+            echo "Fetching active provisioning profile via App Store Connect API..."
+            node scripts/download_profile.js
+          else
+            echo "❌ No provisioning profile secret or App Store API Key provided."
+            exit 1
+          fi
 
       - name: 📦 Get Flutter dependencies
         run: flutter pub get
@@ -40,10 +99,10 @@ jobs:
           pod install --repo-update
           cd ..
 
-      - name: 🔨 Build iOS (Release, No Code-sign)
+      - name: 🔨 Build iOS IPA (Release, Code-signed)
         run: |
           set -o pipefail
-          flutter build ios --release --no-codesign 2>&1 | tee xcode_build.log
+          flutter build ipa --release --export-options-plist=ios/ExportOptions.plist 2>&1 | tee xcode_build.log
 
       - name: 🔍 Display Build Errors
         if: failure()
@@ -61,16 +120,32 @@ jobs:
           path: xcode_build.log
           retention-days: 7
 
-      - name: 📦 Package into IPA
-        run: |
-          mkdir -p Payload
-          cp -r build/ios/iphoneos/Runner.app Payload/
-          zip -r -q Baedal-unsigned.ipa Payload
-          rm -rf Payload
-
-      - name: 🚀 Upload IPA Artifact
+      - name: 🚀 Upload IPA Artifact to GitHub Actions
         uses: actions/upload-artifact@v4
         with:
-          name: Baedal-iOS-Unsigned-IPA
-          path: Baedal-unsigned.ipa
+          name: Baedal-iOS-Release-IPA
+          path: build/ios/ipa/*.ipa
           retention-days: 14
+
+      - name: 🚀 Publish to Apple TestFlight / App Store Connect
+        if: success()
+        env:
+          APP_STORE_KEY_ID: ${{ secrets.APP_STORE_KEY_ID }}
+          APP_STORE_ISSUER_ID: ${{ secrets.APP_STORE_ISSUER_ID }}
+          APP_STORE_PRIVATE_KEY: ${{ secrets.APP_STORE_PRIVATE_KEY }}
+        run: |
+          if [ -n "$APP_STORE_PRIVATE_KEY" ]; then
+            echo "Publishing to TestFlight via Fastlane..."
+            cd ios
+            fastlane upload_to_testflight
+            cd ..
+          else
+            echo "⚠️ APP_STORE_PRIVATE_KEY secret not found, skipping TestFlight upload."
+          fi
+
+      - name: 🧹 Clean up keychain
+        if: always()
+        run: |
+          if [ -n "$KEYCHAIN_PATH" ] && [ -f "$KEYCHAIN_PATH" ]; then
+            security delete-keychain "$KEYCHAIN_PATH" || true
+          fi

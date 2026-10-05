@@ -1,0 +1,24 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "Upload IPA to App Store Connect / TestFlight"
+  lane :upload_to_testflight do |options|
+    ipa_path = options[:ipa] || Dir["../build/ios/ipa/*.ipa"].first
+    UI.user_error!("No IPA file found to upload!") unless ipa_path && File.exist?(ipa_path)
+
+    api_key = app_store_connect_api_key(
+      key_id: ENV["APP_STORE_KEY_ID"],
+      issuer_id: ENV["APP_STORE_ISSUER_ID"],
+      key_content: ENV["APP_STORE_PRIVATE_KEY"],
+      is_key_content_base64: false
+    )
+
+    pilot(
+      api_key: api_key,
+      ipa: ipa_path,
+      app_identifier: "com.baedal.app",
+      skip_waiting_for_build_processing: true,
+      skip_submission: true
+    )
+  end
+end
