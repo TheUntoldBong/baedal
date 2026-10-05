@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>369896627923-rqjhsuh7vihe1csnhuat6v04nborpeo5.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.369896627923-rqjhsuh7vihe1csnhuat6v04nborpeo5</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>369896627923-1837r1ootn7c76khl3f3vu418ke1qnoj.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyBJhvY390us1R_a_HVKkP9N5wh9IXYR540</string>
+	<key>GCM_SENDER_ID</key>
+	<string>369896627923</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.baedal.app</string>
+	<key>PROJECT_ID</key>
+	<string>baedal-food-delivery</string>
+	<key>STORAGE_BUCKET</key>
+	<string>baedal-food-delivery.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:369896627923:ios:275fbc7a0eb3afbc9dbe26</string>
+</dict>
+</plist>

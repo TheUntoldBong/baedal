@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <rect x="4.5" y="15" width="12" height="21" rx="6" fill="#D9A79C"/>
+  <rect x="6.6" y="33" width="2.6" height="17" rx="1.3" fill="#8C5240"/>
+  <rect x="11.8" y="33" width="2.6" height="17" rx="1.3" fill="#8C5240"/>
+  <rect x="47.5" y="15" width="12" height="21" rx="6" fill="#D9A79C"/>
+  <rect x="49.6" y="33" width="2.6" height="17" rx="1.3" fill="#8C5240"/>
+  <rect x="54.8" y="33" width="2.6" height="17" rx="1.3" fill="#8C5240"/>
+  <rect x="16.5" y="40" width="3.2" height="14" rx="1.6" fill="#8C5240"/>
+  <rect x="44.3" y="40" width="3.2" height="14" rx="1.6" fill="#8C5240"/>
+  <rect x="31.1" y="20.5" width="1.8" height="4.5" rx="0.9" fill="#8E979F"/>
+  <circle cx="32" cy="20.4" r="1.9" fill="#8E979F"/>
+  <path d="M17.5 34.5a14.5 12 0 0 1 29 0z" fill="#B4BCC4"/>
+  <path d="M22.5 34.5a9.5 9 0 0 1 10.5-8.95 12 11 0 0 0-6 8.95z" fill="#CBD2D8"/>
+  <rect x="12" y="34.5" width="40" height="7.5" rx="3.75" fill="#FBEDE9"/>
+  <rect x="12" y="38.6" width="40" height="3.4" rx="1.7" fill="#F0D9D2"/>
+</svg>

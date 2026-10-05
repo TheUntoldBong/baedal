@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "369896627923",
+    "project_id": "baedal-food-delivery",
+    "storage_bucket": "baedal-food-delivery.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:369896627923:android:92e1485db6222b129dbe26",
+        "android_client_info": {
+          "package_name": "com.baedal.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "369896627923-65j9lcpl06md8k4ogf3j05sb7p5mtc26.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.baedal.app",
+            "certificate_hash": "98df3e841e68b8e0c8c78b5022e86eca102cde45"
+          }
+        },
+        {
+          "client_id": "369896627923-pvmv91i1kmnnk87v3hdqajafaccil2md.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAgvlMn5x9qMnT_F2uICNoXU33-KshJmQs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "369896627923-pvmv91i1kmnnk87v3hdqajafaccil2md.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "369896627923-rqjhsuh7vihe1csnhuat6v04nborpeo5.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.baedal.app"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

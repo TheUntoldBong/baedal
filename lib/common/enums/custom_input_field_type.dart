@@ -1,0 +1,1 @@
+enum CustomInputFieldType {email, phone, file, number, text, date, checkBox}
