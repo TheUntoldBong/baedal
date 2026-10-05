@@ -4,9 +4,9 @@ const crypto = require('crypto');
 const https = require('https');
 const os = require('os');
 
-const keyId = process.env.APP_STORE_KEY_ID;
-const issuerId = process.env.APP_STORE_ISSUER_ID;
-const privateKey = process.env.APP_STORE_PRIVATE_KEY;
+const keyId = (process.env.APP_STORE_KEY_ID || '').trim();
+const issuerId = (process.env.APP_STORE_ISSUER_ID || '').trim();
+const privateKey = (process.env.APP_STORE_PRIVATE_KEY || '').trim();
 
 if (!keyId || !issuerId || !privateKey) {
   console.log('App Store Connect credentials not fully provided in environment.');
@@ -57,7 +57,6 @@ https.get('https://api.appstoreconnect.apple.com/v1/profiles?filter[profileType]
       const content = Buffer.from(profile.attributes.profileContent, 'base64');
       fs.writeFileSync(path.join(targetDir, `${uuid}.mobileprovision`), content);
       fs.writeFileSync(path.join(targetDir, `${name}.mobileprovision`), content);
-      fs.writeFileSync(path.join('ios', 'Baedal_AppStore_Profile_2026.mobileprovision'), content);
       console.log('Provisioning profile written successfully!');
     } catch (e) {
       console.error('Failed to parse Apple API response:', e);
