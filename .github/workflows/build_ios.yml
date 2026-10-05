@@ -42,7 +42,24 @@ jobs:
 
       - name: 🔨 Build iOS (Release, No Code-sign)
         run: |
-          flutter build ios --release --no-codesign
+          set -o pipefail
+          flutter build ios --release --no-codesign 2>&1 | tee xcode_build.log
+
+      - name: 🔍 Display Build Errors
+        if: failure()
+        run: |
+          echo "============================================="
+          echo "         XCODE BUILD FAILURE LOGS            "
+          echo "============================================="
+          tail -n 120 xcode_build.log
+
+      - name: 📄 Upload Build Log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcode-build-log
+          path: xcode_build.log
+          retention-days: 7
 
       - name: 📦 Package into IPA
         run: |
