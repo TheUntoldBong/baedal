@@ -88,10 +88,10 @@ jobs:
 
           if [ -f /tmp/legacy_cert.p12 ]; then
             echo "Importing legacy-compatible certificate into keychain..."
-            security import /tmp/legacy_cert.p12 -k $KEYCHAIN_PATH -P "$P12_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security -A
+            security import /tmp/legacy_cert.p12 -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH || security import /tmp/legacy_cert.p12 -k $KEYCHAIN_PATH -P "$P12_PASSWORD" -A
           else
             echo "Importing certificate into keychain..."
-            security import /tmp/certificate.p12 -k $KEYCHAIN_PATH -P "$P12_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security -A
+            security import /tmp/certificate.p12 -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH || security import /tmp/certificate.p12 -k $KEYCHAIN_PATH -P "$P12_PASSWORD" -A
           fi
 
           # Allow codesign tool to access keychain without prompts
@@ -102,7 +102,7 @@ jobs:
           security list-keychains -d user -s $KEYCHAIN_PATH $(security list-keychains -d user | sed -e 's/"//g')
 
           echo "=== Installed Signing Identities ==="
-          security find-identity -v -p codesigning $KEYCHAIN_PATH
+          security find-identity -v -p codesigning $KEYCHAIN_PATH || true
 
       - name: 📲 Install Provisioning Profile
         env:
