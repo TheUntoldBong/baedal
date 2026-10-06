@@ -2,7 +2,7 @@ default_platform(:ios)
 
 platform :ios do
   desc "Upload IPA to App Store Connect / TestFlight"
-  lane :upload_to_testflight do |options|
+  lane :publish_to_testflight do |options|
     ipa_path = options[:ipa] || Dir["../build/ios/ipa/*.ipa"].first || Dir["build/ios/ipa/*.ipa"].first
     UI.user_error!("No IPA file found to upload!") unless ipa_path && File.exist?(ipa_path)
 
