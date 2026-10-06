@@ -4,9 +4,9 @@ const crypto = require('crypto');
 const https = require('https');
 const os = require('os');
 
-const keyId = (process.env.APP_STORE_KEY_ID || '').trim();
+const keyId = (process.env.APP_STORE_KEY_ID || '').trim().replace(/^AuthKey_/, '').replace(/\.p8$/, '');
 const issuerId = (process.env.APP_STORE_ISSUER_ID || '').trim();
-const privateKey = (process.env.APP_STORE_PRIVATE_KEY || '').trim();
+const privateKey = (process.env.APP_STORE_PRIVATE_KEY || '').trim().replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
 if (!keyId || !issuerId || !privateKey) {
   console.log('App Store Connect credentials not fully provided in environment.');

@@ -6,7 +6,7 @@ platform :ios do
     ipa_path = options[:ipa] || Dir["../build/ios/ipa/*.ipa"].first || Dir["build/ios/ipa/*.ipa"].first
     UI.user_error!("No IPA file found to upload!") unless ipa_path && File.exist?(ipa_path)
 
-    key_id = (ENV["APP_STORE_KEY_ID"] || "").strip
+    key_id = (ENV["APP_STORE_KEY_ID"] || "").strip.gsub(/^AuthKey_/, "").gsub(/\.p8$/, "")
     issuer_id = (ENV["APP_STORE_ISSUER_ID"] || "").strip
     key_path = options[:key_file] || File.expand_path("~/.appstoreconnect/private_keys/AuthKey_#{key_id}.p8")
 

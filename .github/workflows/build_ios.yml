@@ -182,28 +182,44 @@ jobs:
           APP_STORE_ISSUER_ID: ${{ secrets.APP_STORE_ISSUER_ID }}
           APP_STORE_PRIVATE_KEY: ${{ secrets.APP_STORE_PRIVATE_KEY }}
         run: |
+          # Sanitize environment variables (strip carriage returns, newlines, spaces, and accidental prefixes/suffixes)
+          APP_STORE_KEY_ID=$(echo "$APP_STORE_KEY_ID" | tr -d '\r\n ' | sed -e 's/^AuthKey_//' -e 's/\.p8$//')
+          APP_STORE_ISSUER_ID=$(echo "$APP_STORE_ISSUER_ID" | tr -d '\r\n ')
+          export APP_STORE_KEY_ID
+          export APP_STORE_ISSUER_ID
+
           if [ -z "$APP_STORE_PRIVATE_KEY" ] || [ -z "$APP_STORE_KEY_ID" ] || [ -z "$APP_STORE_ISSUER_ID" ]; then
             echo "❌ App Store Connect credentials missing, skipping upload."
             exit 1
           fi
 
-          # Setup Apple API private key in the standard directory expected by Apple tools
+          echo "Using App Store Key ID: $APP_STORE_KEY_ID"
+          echo "Using App Store Issuer ID: $APP_STORE_ISSUER_ID"
+
+          # Setup Apple API private key in standard directories expected by Apple tools
           KEY_DIR="$HOME/.appstoreconnect/private_keys"
-          mkdir -p "$KEY_DIR"
+          ALT_KEY_DIR="$HOME/private_keys"
+          mkdir -p "$KEY_DIR" "$ALT_KEY_DIR"
+          export API_PRIVATE_KEYS_DIR="$KEY_DIR"
+
+          KEY_FILE="$KEY_DIR/AuthKey_${APP_STORE_KEY_ID}.p8"
+          ALT_KEY_FILE="$ALT_KEY_DIR/AuthKey_${APP_STORE_KEY_ID}.p8"
+
           node -e "
             const fs = require('fs');
-            const path = require('path');
-            const os = require('os');
-            const key = (process.env.APP_STORE_PRIVATE_KEY || '').trim();
-            const keyId = (process.env.APP_STORE_KEY_ID || '').trim();
-            const target = path.join(os.homedir(), '.appstoreconnect', 'private_keys', 'AuthKey_' + keyId + '.p8');
-            fs.writeFileSync(target, key + '\n');
-            console.log('Saved Apple API Key to:', target, 'Size:', fs.statSync(target).size);
-          "
-          chmod 600 "$KEY_DIR/AuthKey_${APP_STORE_KEY_ID}.p8"
+            let key = (process.env.APP_STORE_PRIVATE_KEY || '').trim().replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+            if (!key.endsWith('\n')) key += '\n';
 
-          IPA_PATH=$(find build/ios/ipa -name "*.ipa" | head -n 1)
-          if [ -z "$IPA_PATH" ]; then
+            ['$KEY_FILE', '$ALT_KEY_FILE'].forEach(target => {
+              fs.writeFileSync(target, key, { mode: 0o600 });
+              console.log('Saved Apple API Key to:', target, 'Size:', fs.statSync(target).size);
+            });
+          "
+          chmod 600 "$KEY_FILE" "$ALT_KEY_FILE" || true
+
+          # Find release IPA as an absolute path
+          IPA_PATH=$(find "$GITHUB_WORKSPACE/build/ios/ipa" -name "*.ipa" | head -n 1)
+          if [ -z "$IPA_PATH" ] || [ ! -f "$IPA_PATH" ]; then
             echo "❌ No .ipa file found in build/ios/ipa/"
             ls -la build/ios/ || true
             exit 1
@@ -218,14 +234,15 @@ jobs:
             echo "🎉 Successfully uploaded IPA to App Store Connect / TestFlight!"
           else
             echo "⚠️ altool reported an issue, trying Fastlane pilot fallback..."
-            cd ios
-            fastlane upload_to_testflight key_file:"$KEY_DIR/AuthKey_${APP_STORE_KEY_ID}.p8" ipa:"../$IPA_PATH"
-            cd ..
+            cd "$GITHUB_WORKSPACE/ios"
+            fastlane upload_to_testflight key_file:"$KEY_FILE" ipa:"$IPA_PATH"
+            cd "$GITHUB_WORKSPACE"
           fi
 
-      - name: 🧹 Clean up keychain
+      - name: 🧹 Clean up keychain & temporary credentials
         if: always()
         run: |
           if [ -n "$KEYCHAIN_PATH" ] && [ -f "$KEYCHAIN_PATH" ]; then
             security delete-keychain "$KEYCHAIN_PATH" || true
           fi
+          rm -rf "$HOME/.appstoreconnect/private_keys" "$HOME/private_keys" /tmp/*.p8 /tmp/*.pem /tmp/*.p12 || true
