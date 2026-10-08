@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
@@ -51,13 +53,13 @@
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>This app needs access to location to manage coverage of restaurant and when add a new address.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>The application does not use this feature</string>
+	<string>This app requires access to the microphone to search for food and restaurants using your voice.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app requires access to the gallery to upload customer profile picture.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>This app needs speech recognition to search by voice</string>
+	<string>This app requires speech recognition to transcribe your voice searches for food and restaurants.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
