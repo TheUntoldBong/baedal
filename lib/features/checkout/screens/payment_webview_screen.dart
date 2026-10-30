@@ -7,18 +7,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:get/get.dart';
 import 'package:stackfood_multivendor/common/widgets/custom_app_bar_widget.dart';
-import 'package:stackfood_multivendor/features/checkout/widgets/payment_failed_dialog.dart';
+import 'package:stackfood_multivendor/common/widgets/custom_snackbar_widget.dart';
+import 'package:stackfood_multivendor/features/checkout/controllers/checkout_controller.dart';
+import 'package:stackfood_multivendor/features/order/controllers/order_controller.dart';
 import 'package:stackfood_multivendor/features/dashboard/controllers/dashboard_controller.dart';
 import 'package:stackfood_multivendor/features/loyalty/controllers/loyalty_controller.dart';
 import 'package:stackfood_multivendor/features/order/domain/models/order_model.dart';
 import 'package:stackfood_multivendor/features/pro/controllers/pro_controller.dart';
 import 'package:stackfood_multivendor/features/splash/controllers/splash_controller.dart';
-import 'package:stackfood_multivendor/helper/address_helper.dart';
 import 'package:stackfood_multivendor/helper/cod_to_digital_payment_helper.dart';
 import 'package:stackfood_multivendor/helper/route_helper.dart';
 import 'package:stackfood_multivendor/util/app_constants.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:stackfood_multivendor/common/widgets/adaptive_dialog_widget.dart';
 
 class PaymentWebViewScreen extends StatefulWidget {
   final OrderModel orderModel;
@@ -44,7 +44,6 @@ class PaymentScreenState extends State<PaymentWebViewScreen> {
   late String selectedUrl;
   bool _isLoading = true;
   bool _canRedirect = true;
-  double? _maximumCodOrderAmount;
   PullToRefreshController? pullToRefreshController;
   InAppWebViewController? webViewController;
 
@@ -67,18 +66,6 @@ class PaymentScreenState extends State<PaymentWebViewScreen> {
   }
 
   void _initData() async {
-    if(!_isCodToDigital && (widget.addFundUrl == null || widget.addFundUrl!.isEmpty) && (widget.subscriptionUrl == null || widget.subscriptionUrl!.isEmpty)){
-      try {
-        final address = AddressHelper.getAddressFromSharedPref();
-        if (address?.zoneData != null && widget.orderModel.restaurant?.zoneId != null) {
-          final zoneData = address!.zoneData!.firstWhereOrNull((data) => data.id == widget.orderModel.restaurant!.zoneId);
-          _maximumCodOrderAmount = zoneData?.maxCodOrderAmount;
-        }
-      } catch (e) {
-        debugPrint('Error obtaining max COD order amount: $e');
-      }
-    }
-
     pullToRefreshController = GetPlatform.isWeb || ![TargetPlatform.iOS, TargetPlatform.android].contains(defaultTargetPlatform) ? null : PullToRefreshController(
       onRefresh: () async {
         if (defaultTargetPlatform == TargetPlatform.android) {
@@ -93,9 +80,10 @@ class PaymentScreenState extends State<PaymentWebViewScreen> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: Navigator.canPop(context),
+      canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
-        _exitApp();
+        if (didPop) return;
+        await _exitApp();
       },
       child: Scaffold(
         backgroundColor: context.surfaceContainer,
@@ -207,22 +195,37 @@ class PaymentScreenState extends State<PaymentWebViewScreen> {
     );
   }
 
+  bool _isCancelling = false;
+
   Future<bool?> _exitApp() async {
+    if (_isCancelling) return null;
+    _isCancelling = true;
+
     if(_isCodToDigital) {
+      Get.back();
       return null;
     }
-    ///ToDO: need implement for subscription-----
-    if((widget.addFundUrl == '' && widget.addFundUrl!.isEmpty) || !Get.find<SplashController>().configModel!.digitalPaymentInfo!.pluginPaymentGateways!){
-      return showCustomDialog(
-        child: PaymentFailedDialog(
-        orderID: widget.orderModel.id.toString(),
-        orderAmount: widget.orderModel.orderAmount,
-        maxCodOrderAmount: _maximumCodOrderAmount,
-      ),
-      );
-    }
-    return null; 
 
+    if((widget.addFundUrl == null || widget.addFundUrl!.isEmpty) && (widget.subscriptionUrl == null || widget.subscriptionUrl!.isEmpty)){
+      if(widget.orderModel.id != null && widget.orderModel.id != 0) {
+        showCustomSnackBar('cancelling_order'.tr.isNotEmpty ? 'cancelling_order'.tr : 'Cancelling order...', isError: false);
+        try {
+          await Get.find<OrderController>().cancelOrder(
+            widget.orderModel.id,
+            'Payment cancelled by user',
+            comment: 'User pressed back button during online payment',
+          );
+        } catch (e) {
+          debugPrint('Error cancelling unpaid order: $e');
+        }
+        showCustomSnackBar('Order cancelled as payment was not completed.', isError: true);
+        Get.offAllNamed(RouteHelper.getInitialRoute());
+        return true;
+      }
+    }
+
+    Get.back();
+    return null;
   }
 
   void _redirect(String url, String? contactNumber, int? restaurantId, int? packageId) {
@@ -246,12 +249,27 @@ class PaymentScreenState extends State<PaymentWebViewScreen> {
         _canRedirect = false;
       }
 
-      if((widget.addFundUrl == '' && widget.addFundUrl!.isEmpty && widget.subscriptionUrl == '' && widget.subscriptionUrl!.isEmpty)){
+      if((widget.addFundUrl == null || widget.addFundUrl!.isEmpty) && (widget.subscriptionUrl == null || widget.subscriptionUrl!.isEmpty)){
         if (isSuccess) {
+          try {
+            Get.find<CheckoutController>().sendNotificationRequest(
+              widget.orderModel.id.toString(),
+              widget.orderModel.userId == 0 ? widget.guestId : null,
+            );
+          } catch (_) {}
+
           double total = ((widget.orderModel.orderAmount! / 100) * Get.find<SplashController>().configModel!.loyaltyPointItemPurchasePoint!);
           Get.find<LoyaltyController>().saveEarningPoint(total.toStringAsFixed(0));
           Get.offNamed(RouteHelper.getOrderSuccessRoute(widget.orderModel.id.toString(), 'success', widget.orderModel.orderAmount, contactNumber, isDeliveryOrder: widget.orderModel.orderType == 'delivery'));
         } else if (isFailed || isCancel) {
+          try {
+            Get.find<OrderController>().cancelOrder(
+              widget.orderModel.id,
+              'Payment failed or cancelled',
+              comment: 'Gateway callback status: $url',
+            );
+          } catch (_) {}
+
           Get.offNamed(RouteHelper.getOrderSuccessRoute(widget.orderModel.id.toString(), 'fail', widget.orderModel.orderAmount, contactNumber, isDeliveryOrder: widget.orderModel.orderType == 'delivery'));
         }
       } else{

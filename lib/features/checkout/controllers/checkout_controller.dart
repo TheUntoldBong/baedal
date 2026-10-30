@@ -979,11 +979,13 @@ class CheckoutController extends GetxController implements GetxService {
       orderID = response.body['order_id'].toString();
       noteController.clear();
 
-      Response notificationResponse = await checkoutServiceInterface.sendNotificationRequest(orderID, Get.find<AuthController>().isLoggedIn() ? null : Get.find<AuthController>().getGuestId());
-      bool reloadHome = notificationResponse.body['reload_home'];
+      if(paymentMethodIndex == 0 || paymentMethodIndex == 1) {
+        Response notificationResponse = await checkoutServiceInterface.sendNotificationRequest(orderID, Get.find<AuthController>().isLoggedIn() ? null : Get.find<AuthController>().getGuestId());
+        bool reloadHome = notificationResponse.body != null && notificationResponse.body['reload_home'] == true;
 
-      if(reloadHome) {
-        await HomeScreen.loadData(true);
+        if(reloadHome) {
+          await HomeScreen.loadData(true);
+        }
       }
       Get.find<CartController>().getCartBundleList().then((_){});
 
@@ -1004,6 +1006,14 @@ class CheckoutController extends GetxController implements GetxService {
     }
     update();
     return orderID;
+  }
+
+  Future<void> sendNotificationRequest(String orderId, String? guestId) async {
+    try {
+      await checkoutServiceInterface.sendNotificationRequest(orderId, guestId);
+    } catch (e) {
+      debugPrint('Error sending order notification: $e');
+    }
   }
 
   void _callback(bool isSuccess, String? message, String orderID, int? zoneID, double amount, double? maximumCodOrderAmount, bool fromCart, bool isCashOnDeliveryActive,

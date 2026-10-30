@@ -7,7 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:get/get.dart';
 import 'package:stackfood_multivendor/common/widgets/custom_app_bar_widget.dart';
-import 'package:stackfood_multivendor/features/checkout/widgets/payment_failed_dialog.dart';
+import 'package:stackfood_multivendor/common/widgets/custom_snackbar_widget.dart';
+import 'package:stackfood_multivendor/features/order/controllers/order_controller.dart';
 import 'package:stackfood_multivendor/features/dashboard/controllers/dashboard_controller.dart';
 import 'package:stackfood_multivendor/features/loyalty/controllers/loyalty_controller.dart';
 import 'package:stackfood_multivendor/features/order/domain/models/order_model.dart';
@@ -19,7 +20,6 @@ import 'package:stackfood_multivendor/helper/route_helper.dart';
 import 'package:stackfood_multivendor/util/app_constants.dart';
 import 'package:stackfood_multivendor/util/dimensions.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:stackfood_multivendor/common/widgets/adaptive_dialog_widget.dart';
 
 class PaymentScreen extends StatefulWidget {
   final OrderModel orderModel;
@@ -113,12 +113,15 @@ class PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
+  bool _isCancelling = false;
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: Navigator.canPop(context),
+      canPop: false,
       onPopInvokedWithResult: (didPop, result) async{
-        _exitApp().then((value) => value!);
+        if (didPop) return;
+        _exitApp();
       },
       child: Scaffold(
         backgroundColor: context.primary,
@@ -140,13 +143,33 @@ class PaymentScreenState extends State<PaymentScreen> {
   }
 
   Future<bool?> _exitApp() async {
-    if (kDebugMode) {
-      print('---------- : ${widget.orderModel.orderStatus} / ${widget.orderModel.paymentMethod}/ ${widget.orderModel.id}');
-      print('---check------- : ${widget.addFundUrl == null} && ${widget.addFundUrl!.isEmpty} && ${widget.subscriptionUrl == ''} && ${widget.subscriptionUrl!.isEmpty}');
+    if (_isCancelling) return null;
+    _isCancelling = true;
+
+    if(_isCodToDigital) {
+      Get.back();
+      return null;
     }
-    if(!_isCodToDigital && (widget.addFundUrl == null || widget.addFundUrl!.isEmpty) && widget.subscriptionUrl == '' && widget.subscriptionUrl!.isEmpty){
-      return showCustomDialog(child: PaymentFailedDialog(orderID: widget.orderModel.id.toString(), orderAmount: widget.orderModel.orderAmount, maxCodOrderAmount: maxCodOrderAmount, contactPersonNumber: widget.contactNumber));
+
+    if((widget.addFundUrl == null || widget.addFundUrl!.isEmpty) && (widget.subscriptionUrl == null || widget.subscriptionUrl!.isEmpty)){
+      if(widget.orderModel.id != null && widget.orderModel.id != 0) {
+        showCustomSnackBar('cancelling_order'.tr.isNotEmpty ? 'cancelling_order'.tr : 'Cancelling order...', isError: false);
+        try {
+          await Get.find<OrderController>().cancelOrder(
+            widget.orderModel.id,
+            'Payment cancelled by user',
+            comment: 'User pressed back button during online payment',
+          );
+        } catch (e) {
+          debugPrint('Error auto-cancelling order: $e');
+        }
+        showCustomSnackBar('Order cancelled as payment was not completed.', isError: true);
+        Get.offAllNamed(RouteHelper.getInitialRoute());
+        return true;
+      }
     }
+
+    Get.back();
     return null;
   }
 
@@ -222,9 +245,15 @@ class MyInAppBrowser extends InAppBrowser {
       return;
     }
     if(_canRedirect) {
-      if((addFundUrl == null || addFundUrl!.isEmpty) && subscriptionUrl == '' && subscriptionUrl!.isEmpty){
-        showCustomDialog(child: PaymentFailedDialog(orderID: orderID, orderAmount: orderAmount, maxCodOrderAmount: maxCodOrderAmount, contactPersonNumber: contactNumber,));
-      } return;
+      if((addFundUrl == null || addFundUrl!.isEmpty) && (subscriptionUrl == null || subscriptionUrl!.isEmpty)){
+        try {
+          Get.find<OrderController>().cancelOrder(int.tryParse(orderID), 'Payment cancelled by user', comment: 'Browser closed without payment');
+        } catch (_) {}
+        showCustomSnackBar('Order cancelled as payment was not completed.', isError: true);
+        Get.offAllNamed(RouteHelper.getInitialRoute());
+        return;
+      }
+      return;
     }
     if (kDebugMode) {
       print("\n\nBrowser closed!\n\n");
