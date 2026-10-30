@@ -9,7 +9,6 @@ import 'package:get/get.dart';
 import 'package:stackfood_multivendor/common/widgets/custom_app_bar_widget.dart';
 import 'package:stackfood_multivendor/features/checkout/widgets/payment_failed_dialog.dart';
 import 'package:stackfood_multivendor/features/dashboard/controllers/dashboard_controller.dart';
-import 'package:stackfood_multivendor/features/location/domain/models/zone_response_model.dart';
 import 'package:stackfood_multivendor/features/loyalty/controllers/loyalty_controller.dart';
 import 'package:stackfood_multivendor/features/order/domain/models/order_model.dart';
 import 'package:stackfood_multivendor/features/pro/controllers/pro_controller.dart';
@@ -58,21 +57,28 @@ class PaymentScreenState extends State<PaymentScreen> {
 
     if(_isCodToDigital) {
       selectedUrl = widget.codToDigitalUrl!;
-    } else if(widget.addFundUrl == '' && widget.addFundUrl!.isEmpty && widget.subscriptionUrl == '' && widget.subscriptionUrl!.isEmpty) {
+    } else if((widget.addFundUrl == null || widget.addFundUrl!.isEmpty) && (widget.subscriptionUrl == null || widget.subscriptionUrl!.isEmpty)) {
       selectedUrl = '${AppConstants.baseUrl}/payment-mobile?customer_id=${widget.orderModel.userId == 0 ? widget.guestId : widget.orderModel.userId}&order_id=${widget.orderModel.id}&payment_method=${widget.paymentMethod}';
-    } else if(widget.subscriptionUrl != '' && widget.subscriptionUrl!.isNotEmpty){
+    } else if(widget.subscriptionUrl != null && widget.subscriptionUrl!.isNotEmpty){
       selectedUrl = widget.subscriptionUrl!;
     } else {
-      selectedUrl = widget.addFundUrl!;
+      selectedUrl = widget.addFundUrl ?? '';
     }
     _initData();
   }
 
   void _initData() async {
 
-    if(!_isCodToDigital && widget.addFundUrl == null && widget.addFundUrl!.isEmpty){
-      ZoneData zoneData = AddressHelper.getAddressFromSharedPref()!.zoneData!.firstWhere((data) => data.id == widget.orderModel.restaurant!.zoneId);
-      maxCodOrderAmount = zoneData.maxCodOrderAmount;
+    if(!_isCodToDigital && (widget.addFundUrl == null || widget.addFundUrl!.isEmpty) && (widget.subscriptionUrl == null || widget.subscriptionUrl!.isEmpty)){
+      try {
+        final address = AddressHelper.getAddressFromSharedPref();
+        if (address?.zoneData != null && widget.orderModel.restaurant?.zoneId != null) {
+          final zoneData = address!.zoneData!.firstWhereOrNull((data) => data.id == widget.orderModel.restaurant!.zoneId);
+          maxCodOrderAmount = zoneData?.maxCodOrderAmount;
+        }
+      } catch (e) {
+        debugPrint('Error getting max cod order amount: $e');
+      }
     }
 
     browser = MyInAppBrowser(orderID: widget.orderModel.id.toString(), orderAmount: widget.orderModel.orderAmount, maxCodOrderAmount: maxCodOrderAmount, addFundUrl: widget.addFundUrl,

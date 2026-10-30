@@ -9,7 +9,6 @@ import 'package:get/get.dart';
 import 'package:stackfood_multivendor/common/widgets/custom_app_bar_widget.dart';
 import 'package:stackfood_multivendor/features/checkout/widgets/payment_failed_dialog.dart';
 import 'package:stackfood_multivendor/features/dashboard/controllers/dashboard_controller.dart';
-import 'package:stackfood_multivendor/features/location/domain/models/zone_response_model.dart';
 import 'package:stackfood_multivendor/features/loyalty/controllers/loyalty_controller.dart';
 import 'package:stackfood_multivendor/features/order/domain/models/order_model.dart';
 import 'package:stackfood_multivendor/features/pro/controllers/pro_controller.dart';
@@ -56,21 +55,28 @@ class PaymentScreenState extends State<PaymentWebViewScreen> {
     super.initState();
     if(_isCodToDigital){
       selectedUrl = widget.codToDigitalUrl!;
-    } else if(widget.addFundUrl == '' && widget.addFundUrl!.isEmpty && widget.subscriptionUrl == '' && widget.subscriptionUrl!.isEmpty){
+    } else if((widget.addFundUrl == null || widget.addFundUrl!.isEmpty) && (widget.subscriptionUrl == null || widget.subscriptionUrl!.isEmpty)){
       selectedUrl = '${AppConstants.baseUrl}/payment-mobile?customer_id=${widget.orderModel.userId == 0 ? widget.guestId : widget.orderModel.userId}&order_id=${widget.orderModel.id}&payment_method=${widget.paymentMethod}';
-    } else if(widget.subscriptionUrl != '' && widget.subscriptionUrl!.isNotEmpty){
+    } else if(widget.subscriptionUrl != null && widget.subscriptionUrl!.isNotEmpty){
       selectedUrl = widget.subscriptionUrl!;
     } else {
-      selectedUrl = widget.addFundUrl!;
+      selectedUrl = widget.addFundUrl ?? '';
     }
 
     _initData();
   }
 
   void _initData() async {
-    if(!_isCodToDigital && widget.addFundUrl == '' && widget.addFundUrl!.isEmpty && widget.subscriptionUrl == '' && widget.subscriptionUrl!.isEmpty){
-      ZoneData zoneData = AddressHelper.getAddressFromSharedPref()!.zoneData!.firstWhere((data) => data.id == widget.orderModel.restaurant!.zoneId);
-      _maximumCodOrderAmount = zoneData.maxCodOrderAmount;
+    if(!_isCodToDigital && (widget.addFundUrl == null || widget.addFundUrl!.isEmpty) && (widget.subscriptionUrl == null || widget.subscriptionUrl!.isEmpty)){
+      try {
+        final address = AddressHelper.getAddressFromSharedPref();
+        if (address?.zoneData != null && widget.orderModel.restaurant?.zoneId != null) {
+          final zoneData = address!.zoneData!.firstWhereOrNull((data) => data.id == widget.orderModel.restaurant!.zoneId);
+          _maximumCodOrderAmount = zoneData?.maxCodOrderAmount;
+        }
+      } catch (e) {
+        debugPrint('Error obtaining max COD order amount: $e');
+      }
     }
 
     pullToRefreshController = GetPlatform.isWeb || ![TargetPlatform.iOS, TargetPlatform.android].contains(defaultTargetPlatform) ? null : PullToRefreshController(
@@ -101,11 +107,30 @@ class PaymentScreenState extends State<PaymentWebViewScreen> {
               initialUserScripts: UnmodifiableListView<UserScript>([]),
               pullToRefreshController: pullToRefreshController,
               initialSettings: InAppWebViewSettings(
-                userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.97 Safari/537.36',
                 useHybridComposition: true,
+                javaScriptEnabled: true,
+                javaScriptCanOpenWindowsAutomatically: true,
+                supportMultipleWindows: true,
+                domStorageEnabled: true,
+                databaseEnabled: true,
+                useShouldOverrideUrlLoading: true,
+                mediaPlaybackRequiresUserGesture: false,
+                allowsInlineMediaPlayback: true,
+                allowsBackForwardNavigationGestures: true,
+                transparentBackground: false,
               ),
               onWebViewCreated: (controller) async {
                 webViewController = controller;
+              },
+              onCreateWindow: (controller, createWindowAction) async {
+                final uri = createWindowAction.request.url;
+                if (uri != null) {
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    return true;
+                  }
+                }
+                return false;
               },
               onLoadStart: (controller, url) async {
                 _redirect(url.toString(), widget.contactNumber, widget.restaurantId, widget.packageId);
@@ -114,14 +139,48 @@ class PaymentScreenState extends State<PaymentWebViewScreen> {
                 });
               },
               shouldOverrideUrlLoading: (controller, navigationAction) async {
-                Uri uri = navigationAction.request.url!;
-                if (!["http", "https", "file", "chrome", "data", "javascript", "about"].contains(uri.scheme)) {
+                Uri? uri = navigationAction.request.url;
+                if (uri == null) {
+                  return NavigationActionPolicy.ALLOW;
+                }
+                String url = uri.toString();
+                String scheme = uri.scheme.toLowerCase();
+
+                if (["http", "https", "file", "chrome", "data", "javascript", "about"].contains(scheme)) {
+                  return NavigationActionPolicy.ALLOW;
+                }
+
+                // Handle Android intent:// URIs (e.g. intent://pay?...#Intent;scheme=upi;package=...;end)
+                if (scheme == 'intent') {
+                  try {
+                    String raw = url;
+                    if (raw.contains('scheme=')) {
+                      String subScheme = raw.split('scheme=')[1].split(';')[0];
+                      raw = raw.replaceFirst('intent:', '$subScheme:');
+                    }
+                    Uri parsed = Uri.parse(raw);
+                    if (await canLaunchUrl(parsed)) {
+                      await launchUrl(parsed, mode: LaunchMode.externalApplication);
+                      return NavigationActionPolicy.CANCEL;
+                    }
+                  } catch (e) {
+                    debugPrint('Error launching intent scheme: $e');
+                  }
+                }
+
+                // Handle direct UPI schemes (upi://, phonepe://, gpay://, paytmmp://, bhim://, etc.)
+                try {
                   if (await canLaunchUrl(uri)) {
                     await launchUrl(uri, mode: LaunchMode.externalApplication);
                     return NavigationActionPolicy.CANCEL;
+                  } else {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    return NavigationActionPolicy.CANCEL;
                   }
+                } catch (e) {
+                  debugPrint('Could not launch external URL: $url ($e)');
                 }
-                return NavigationActionPolicy.ALLOW;
+                return NavigationActionPolicy.CANCEL;
               },
               onLoadStop: (controller, url) async {
                 pullToRefreshController?.endRefreshing();

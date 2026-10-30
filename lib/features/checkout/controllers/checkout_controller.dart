@@ -31,7 +31,6 @@ import 'package:stackfood_multivendor/features/splash/controllers/splash_control
 import 'package:stackfood_multivendor/features/splash/domain/models/config_model.dart';
 import 'package:stackfood_multivendor/helper/address_helper.dart';
 import 'package:stackfood_multivendor/helper/date_converter.dart';
-import 'package:stackfood_multivendor/helper/razorpay_helper.dart';
 import 'package:stackfood_multivendor/helper/responsive_helper.dart';
 import 'package:stackfood_multivendor/helper/route_helper.dart';
 import 'package:stackfood_multivendor/helper/splash_route_helper.dart';
@@ -1035,22 +1034,10 @@ class CheckoutController extends GetxController implements GetxService {
               '&payment_method=$digitalPaymentName&payment_platform=web&&callback=$protocol//$hostname${RouteHelper.orderSuccess}?id=$orderID&amount=$amount&pro_discount=$proDiscount&status=';
           html.window.open(selectedUrl,"_self");
         } else {
-          if (digitalPaymentName == 'razor_pay' || digitalPaymentName == 'razorpay') {
-            RazorpayHelper.openCheckout(
-              orderId: orderID,
-              amount: amount,
-              contactNumber: contactNumber ?? '',
-              email: Get.find<ProfileController>().userInfoModel?.email ?? '',
-              customerName: '${Get.find<ProfileController>().userInfoModel?.fName ?? ''} ${Get.find<ProfileController>().userInfoModel?.lName ?? ''}'.trim(),
-              isDeliveryOrder: isDeliveryOrder,
-              proDiscount: proDiscount,
-            );
-          } else {
-            Get.offNamed(RouteHelper.getPaymentRoute(
-              OrderModel(id: int.parse(orderID), userId: Get.find<ProfileController>().userInfoModel?.id ?? 0, orderAmount: amount, restaurant: Get.find<RestaurantController>().restaurant),
-              digitalPaymentName ?? 'razor_pay', guestId: Get.find<AuthController>().getGuestId(), contactNumber: contactNumber,
-            ));
-          }
+          Get.offNamed(RouteHelper.getPaymentRoute(
+            OrderModel(id: int.parse(orderID), userId: Get.find<ProfileController>().userInfoModel?.id ?? 0, orderAmount: amount, restaurant: Get.find<RestaurantController>().restaurant),
+            digitalPaymentName ?? 'razor_pay', guestId: Get.find<AuthController>().getGuestId(), contactNumber: contactNumber,
+          ));
         }
       }
       clearPrevData();
