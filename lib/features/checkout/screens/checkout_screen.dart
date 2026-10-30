@@ -105,9 +105,10 @@ class CheckoutScreenState extends State<CheckoutScreen> {
     bool isLoggedIn = AuthHelper.isLoggedIn();
     CheckoutController checkoutController = Get.find<CheckoutController>();
 
-    checkoutController.streetNumberController.text = AddressHelper.getAddressFromSharedPref()!.road ?? '';
-    checkoutController.houseController.text = AddressHelper.getAddressFromSharedPref()!.house ?? '';
-    checkoutController.floorController.text = AddressHelper.getAddressFromSharedPref()!.floor ?? '';
+    final prefAddress = AddressHelper.getAddressFromSharedPref();
+    checkoutController.streetNumberController.text = prefAddress?.road ?? '';
+    checkoutController.houseController.text = prefAddress?.house ?? '';
+    checkoutController.floorController.text = prefAddress?.floor ?? '';
     checkoutController.couponController.text = '';
 
     checkoutController.clearPrevData();
@@ -119,10 +120,12 @@ class CheckoutScreenState extends State<CheckoutScreen> {
     checkoutController.initDineInSetup();
     checkoutController.setExchangeAmount(0);
 
-    Get.find<LocationController>().getZone(
-      AddressHelper.getAddressFromSharedPref()!.latitude,
-      AddressHelper.getAddressFromSharedPref()!.longitude, false, updateInAddress: true,
-    );
+    if (prefAddress?.latitude != null && prefAddress?.longitude != null) {
+      Get.find<LocationController>().getZone(
+        prefAddress!.latitude,
+        prefAddress.longitude, false, updateInAddress: true,
+      );
+    }
 
     _cartList = [];
 
@@ -135,13 +138,13 @@ class CheckoutScreenState extends State<CheckoutScreen> {
       if(Get.find<ProfileController>().userInfoModel == null && Get.find<ProfileController>().userInfoModel?.userInfo == null) {
         Get.find<ProfileController>().getUserInfo();
       }
-      Get.find<AddressController>().getAddressList(canInsertAddress: true);
+      Get.find<AddressController>().getAddressList(canInsertAddress: false);
       Get.find<ProController>().getProActiveOffer();
     }
 
     checkoutController.setRestaurantDetails(restaurantId: _cartList![0].restaurantId);
 
-    checkoutController.initCheckoutData(_cartList![0].restaurantId);
+    await checkoutController.initCheckoutData(_cartList![0].restaurantId);
 
     checkoutController.getDeliveryCoverageList(restaurantId: _cartList![0].restaurantId);
 
@@ -158,17 +161,7 @@ class CheckoutScreenState extends State<CheckoutScreen> {
 
     if(_isDigitalPaymentActive ?? false) {
       checkoutController.setPaymentMethod(2, willUpdate: false);
-      var activeList = Get.find<SplashController>().configModel!.activePaymentMethodList;
-      if(activeList != null && activeList.isNotEmpty) {
-        String gateway = activeList[0].getWay!;
-        for (var method in activeList) {
-          if (method.getWay == 'easebuzz') {
-            gateway = 'easebuzz';
-            break;
-          }
-        }
-        checkoutController.changeDigitalPaymentName(gateway);
-      }
+      checkoutController.changeDigitalPaymentName('razor_pay');
     } else if(_isCashOnDeliveryActive ?? false) {
       checkoutController.setPaymentMethod(0, willUpdate: false);
     }

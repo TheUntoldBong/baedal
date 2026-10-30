@@ -3,6 +3,9 @@ import 'package:stackfood_multivendor/features/splash/domain/models/config_model
 
 class CentralizeLoginHelper {
   static bool isSocialLoginActive(ConfigModel? configModel, String medium) {
+    if (medium == 'google') {
+      return false;
+    }
     CentralizeLoginSetup? setup = configModel?.centralizeLoginSetup;
     if(setup?.socialLoginStatus != true) {
       return false;

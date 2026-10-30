@@ -194,19 +194,21 @@ class TrackDetailsView extends StatelessWidget {
                 onTap: callback as void Function()?,
                 child: CustomAssetImageWidget(Images.chatImageOrderDetails, height: 25, width: 25),
               ) : const SizedBox(),
-              const SizedBox(width: Dimensions.paddingLarge),
 
-              InkWell(
-                onTap: () async {
-                  if(await canLaunchUrlString('tel:${takeAway ? track.restaurant != null ? track.restaurant!.phone : '' : track.deliveryMan!.phone}')) {
-                    launchUrlString('tel:${takeAway ? track.restaurant != null ? track.restaurant!.phone : '' : track.deliveryMan!.phone}', mode: LaunchMode.externalApplication);
-                  }else {
-                    showCustomSnackBar('${'can_not_launch'.tr} ${takeAway ? track.restaurant != null ? track.restaurant!.phone : '' : track.deliveryMan!.phone}');
-                  }
+              if(!takeAway && track.deliveryMan != null && track.deliveryMan?.phone != null) ...[
+                const SizedBox(width: Dimensions.paddingLarge),
+                InkWell(
+                  onTap: () async {
+                    if(await canLaunchUrlString('tel:${track.deliveryMan!.phone}')) {
+                      launchUrlString('tel:${track.deliveryMan!.phone}', mode: LaunchMode.externalApplication);
+                    }else {
+                      showCustomSnackBar('${'can_not_launch'.tr} ${track.deliveryMan!.phone}');
+                    }
 
-                },
-                child: CustomAssetImageWidget(Images.callImageOrderDetails, height: 25, width: 25),
-              ),
+                  },
+                  child: CustomAssetImageWidget(Images.callImageOrderDetails, height: 25, width: 25),
+                ),
+              ],
 
             ]),
 

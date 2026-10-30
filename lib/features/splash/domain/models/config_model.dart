@@ -610,13 +610,15 @@ class PaymentBody {
   String? getWay;
   String? getWayTitle;
   String? getWayImageFullUrl;
+  String? publicKey;
 
-  PaymentBody({this.getWay, this.getWayTitle, this.getWayImageFullUrl});
+  PaymentBody({this.getWay, this.getWayTitle, this.getWayImageFullUrl, this.publicKey});
 
   PaymentBody.fromJson(Map<String, dynamic> json) {
     getWay = json['gateway'];
     getWayTitle = json['gateway_title'];
     getWayImageFullUrl = json['gateway_image_full_url'];
+    publicKey = json['public_key'];
   }
 
   Map<String, dynamic> toJson() {
@@ -624,6 +626,7 @@ class PaymentBody {
     data['gateway'] = getWay;
     data['gateway_title'] = getWayTitle;
     data['gateway_image_full_url'] = getWayImageFullUrl;
+    data['public_key'] = publicKey;
     return data;
   }
 }

@@ -74,9 +74,9 @@ class LoginSuggestionBottomSheet extends StatelessWidget {
                     style: context.body.small.regular.overrideWith(color: Theme.of(context).textTheme.bodyLarge!.color!.withValues(alpha: 0.5)),
                     textAlign: TextAlign.center,
                   ),
-                   if(facebookLoginActive || googleLoginActive || appleLoginActive) const SizedBox(height: Dimensions.paddingDefault),
-                  if(facebookLoginActive || googleLoginActive || appleLoginActive)
-                    Text( "continue_with".tr.toCapitalized(), style: context.subHeading.small.strong),
+                   if(facebookLoginActive || googleLoginActive || appleLoginActive) ...[
+                    const SizedBox(height: Dimensions.paddingDefault),
+                    Text("continue_with".tr.toCapitalized(), style: context.subHeading.small.strong),
                     const SizedBox(height: Dimensions.paddingDefault),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingDefault),
@@ -109,8 +109,8 @@ class LoginSuggestionBottomSheet extends StatelessWidget {
                           )),
                       ]),
                     ),
-                    if(facebookLoginActive || googleLoginActive || appleLoginActive) const SizedBox(height: Dimensions.paddingLarge),
-                    if(facebookLoginActive || googleLoginActive || appleLoginActive) Padding(
+                    const SizedBox(height: Dimensions.paddingLarge),
+                    Padding(
                       padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingDefault),
                       child: Row(children: [
                         Expanded(child: Divider(color: context.outline)),
@@ -120,7 +120,8 @@ class LoginSuggestionBottomSheet extends StatelessWidget {
                         Expanded(child: Divider(color: context.outline)),
                       ]),
                     ),
-                    if(facebookLoginActive || googleLoginActive || appleLoginActive) const SizedBox(height: Dimensions.paddingLarge),
+                    const SizedBox(height: Dimensions.paddingLarge),
+                  ],
             
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingDefault),

@@ -57,6 +57,10 @@ class _SocialLoginWidgetState extends State<SocialLoginWidget> {
     customLog('=====facebookLoginActive===> $facebookLoginActive');
     customLog('=====canGoogleAndFacebookLogin===> $canGoogleAndFacebookLogin');
 
+    if (!canGoogleAndFacebookLogin && !canAppleLogin && widget.onOtpViewClick == null) {
+      return const SizedBox();
+    }
+
     if(widget.onlySocialLogin || widget.isProminent) {
       return Column(
         mainAxisAlignment: MainAxisAlignment.start,

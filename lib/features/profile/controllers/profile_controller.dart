@@ -1,11 +1,12 @@
 import 'package:stackfood_multivendor/common/models/response_model.dart';
 import 'package:stackfood_multivendor/features/auth/controllers/auth_controller.dart';
+import 'package:stackfood_multivendor/features/cart/controllers/cart_controller.dart';
 import 'package:stackfood_multivendor/features/chat/domain/models/conversation_model.dart';
 import 'package:stackfood_multivendor/features/favourite/controllers/favourite_controller.dart';
+import 'package:stackfood_multivendor/features/order/controllers/order_controller.dart';
 import 'package:stackfood_multivendor/features/profile/domain/models/update_user_model.dart';
 import 'package:stackfood_multivendor/features/profile/domain/models/userinfo_model.dart';
 import 'package:stackfood_multivendor/features/profile/domain/services/profile_service_interface.dart';
-import 'package:stackfood_multivendor/features/splash/controllers/splash_controller.dart';
 import 'package:stackfood_multivendor/common/widgets/custom_snackbar_widget.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -124,6 +125,13 @@ class ProfileController extends GetxController implements GetxService {
     Response response = await profileServiceInterface.deleteUser();
     _isLoading = false;
     if (response.statusCode == 200) {
+      Get.back();
+      showCustomSnackBar('your_account_remove_successfully'.tr, isError: false);
+      Get.find<AuthController>().socialLogout();
+      Get.find<AuthController>().resetOtpView();
+      Get.find<CartController>().clearCartList();
+      Get.find<FavouriteController>().removeFavourites();
+      Get.find<OrderController>().clearLastOrders();
       await Get.find<AuthController>().clearSharedData(removeToken: false);
       await Get.find<AuthController>().clearUserNumberAndPassword();
       if(Get.find<AuthController>().isActiveRememberMe) {
@@ -132,14 +140,15 @@ class ProfileController extends GetxController implements GetxService {
       if(Get.find<AuthController>().isActiveRememberMeForOtp) {
         Get.find<AuthController>().toggleRememberMeForOtp();
       }
-      Get.find<FavouriteController>().removeFavourites();
       setForceFullyUserEmpty();
-      showCustomSnackBar('your_account_remove_successfully'.tr, isError: false);
-      _isLoading = false;
-      Get.find<SplashController>().navigateToLocationScreen('splash', offNamed: true);
+      Get.offAllNamed(RouteHelper.getInitialRoute());
     } else {
-      _isLoading = false;
       Get.back();
+      String? errorMessage = response.body != null && response.body is Map ? response.body['message'] : response.statusText;
+      if (response.body != null && response.body is Map && response.body['errors'] != null && (response.body['errors'] as List).isNotEmpty) {
+        errorMessage = response.body['errors'][0]['message'];
+      }
+      showCustomSnackBar(errorMessage ?? 'failed_to_delete_account'.tr);
     }
     update();
   }

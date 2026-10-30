@@ -10,9 +10,10 @@ class AppConstants {
 
   static const String fontFamily = 'DMSans';
   static const Color primaryColor = Color(0xFF20A7DB);
-  static const bool payInWevView = false;
+  static const bool payInWevView = true;
   static const String webHostedUrl = 'https://baedalfooddelivery.com';
   static const String googleServerClientId = '369896627923-pvmv91i1kmnnk87v3hdqajafaccil2md.apps.googleusercontent.com';
+  static const String razorpayKey = 'rzp_live_TqciW8mYeWV0Br';
 
   static const String baseUrl = 'https://manage.baedalfooddelivery.com';
   static const String categoryUri = '/api/v1/categories';
@@ -52,6 +53,7 @@ class AppConstants {
   static const String orderCancelUri = '/api/v1/customer/order/cancel';
   static const String orderDeleteUri = '/api/v1/customer/order/delete';
   static const String codSwitchUri = '/api/v1/customer/order/payment-method';
+  static const String razorpayVerifyUri = '/api/v1/customer/order/razorpay-verify';
   static const String orderDetailsUri = '/api/v1/customer/order/details?order_id=';
   static const String wishListGetUri = '/api/v1/customer/wish-list';
   static const String addWishListUri = '/api/v1/customer/wish-list/add?';

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:stackfood_multivendor/common/widgets/custom_asset_image_widget.dart';
 
 import 'package:get/get.dart';
-import 'package:stackfood_multivendor/common/widgets/custom_snackbar_widget.dart';
 import 'package:stackfood_multivendor/features/address/domain/models/address_model.dart';
 import 'package:stackfood_multivendor/features/chat/domain/models/conversation_model.dart';
 import 'package:stackfood_multivendor/features/notification/domain/models/notification_body_model.dart';
@@ -14,7 +13,6 @@ import 'package:stackfood_multivendor/helper/route_helper.dart';
 import 'package:stackfood_multivendor/util/dimensions.dart';
 import 'package:stackfood_multivendor/util/images.dart';
 import 'package:stackfood_multivendor/util/styles.dart';
-import 'package:url_launcher/url_launcher_string.dart';
 
 class RestaurantUserAddressBlock extends StatelessWidget {
   final OrderModel order;
@@ -220,19 +218,6 @@ class _RestaurantContactActions extends StatelessWidget {
 
   const _RestaurantContactActions({required this.order});
 
-  Future<void> _call(BuildContext context) async {
-    final phone = order.restaurant?.phone;
-    if (phone == null || phone.isEmpty) {
-      showCustomSnackBar('${'can_not_launch'.tr} -');
-      return;
-    }
-    if (await canLaunchUrlString('tel:$phone')) {
-      await launchUrlString('tel:$phone', mode: LaunchMode.externalApplication);
-    } else {
-      showCustomSnackBar('${'can_not_launch'.tr} $phone');
-    }
-  }
-
   Future<void> _chat() async {
     final restaurant = order.restaurant;
     if (restaurant == null) return;
@@ -247,8 +232,6 @@ class _RestaurantContactActions extends StatelessWidget {
     final canContact = order.restaurant != null && OrderHelper.canContact(order.orderStatus);
     return Row(mainAxisSize: MainAxisSize.min, children: [
       if (canContact) ...[
-        _SoftCircleAction(icon: Images.phoneCallOrderDetails, onTap: () => _call(context)),
-        const SizedBox(width: Dimensions.paddingDefault),
         _SoftCircleAction(icon: Images.chattingOrderDetails, onTap: () => _chat()),
         const SizedBox(width: Dimensions.padding2xSmall),
       ],

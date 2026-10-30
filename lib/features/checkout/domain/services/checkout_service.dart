@@ -216,17 +216,45 @@ class CheckoutService implements CheckoutServiceInterface {
     bool isFallback = false;
     Response response = await checkoutRepositoryInterface.getDistanceInMeter(originLatLng, destinationLatLng);
     try {
-      if (response.statusCode == 200) {
+      final double straightLineKm = Geolocator.distanceBetween(
+        originLatLng.latitude, originLatLng.longitude,
+        destinationLatLng.latitude, destinationLatLng.longitude,
+      ) / 1000;
+
+      if (response.statusCode == 200 && response.body != null && response.body['distanceMeters'] != null) {
         duration = parseDurationInSecond(response.body['duration']);
-        final double distanceMater = response.body['distanceMeters']?.toDouble();
-        distance = distanceMater / 1000;
+        final double? distanceMeter = double.tryParse(response.body['distanceMeters'].toString());
+        if (distanceMeter != null) {
+          distance = distanceMeter / 1000;
+
+          // Detour safeguard:
+          // If the straight-line distance is within normal delivery reach (<= 10 km),
+          // but the API returns an unnatural detour (> 2.0x straight-line AND > 2 km extra),
+          // this is caused by an erroneous road closure or railway crossing glitch on Google Maps.
+          if (straightLineKm <= 10.0 && distance > (straightLineKm * 2.0) && (distance - straightLineKm) > 2.0) {
+            debugPrint('[delivery-safeguard] Abnormal detour detected: API distance=$distance km vs straight-line=$straightLineKm km. Clamping to realistic road distance.');
+            distance = double.parse((straightLineKm * 1.3).toStringAsFixed(2));
+            // Realistic two-wheeler duration: ~3 minutes per km (180 seconds per km)
+            duration = (distance * 180).round();
+          }
+        } else {
+          isFallback = true;
+          distance = double.parse((straightLineKm * 1.3).toStringAsFixed(2));
+          duration = (distance * 180).round();
+        }
       } else {
         isFallback = true;
-        distance = Geolocator.distanceBetween(originLatLng.latitude, originLatLng.longitude, destinationLatLng.latitude, destinationLatLng.longitude) / 1000;
+        distance = double.parse((straightLineKm * 1.3).toStringAsFixed(2));
+        duration = (distance * 180).round();
       }
     } catch (e) {
       isFallback = true;
-      distance = Geolocator.distanceBetween(originLatLng.latitude, originLatLng.longitude, destinationLatLng.latitude, destinationLatLng.longitude) / 1000;
+      final double straightLineKm = Geolocator.distanceBetween(
+        originLatLng.latitude, originLatLng.longitude,
+        destinationLatLng.latitude, destinationLatLng.longitude,
+      ) / 1000;
+      distance = double.parse((straightLineKm * 1.3).toStringAsFixed(2));
+      duration = (distance * 180).round();
     }
 
     return DistanceDurationModel(distanceInKm: distance, durationInSecond: duration, isFallback: isFallback);

@@ -57,17 +57,27 @@ class AccountDeletionBottomSheet extends StatelessWidget {
         const SizedBox(height: 50),
 
         Padding(
-          padding: EdgeInsets.only(left: 20, right: 20),
-          child: isRunningOrderAvailable ? CustomButtonWidget(
-            width: 170,
-            buttonText: 'view_orders'.tr,
-            color: context.primary,
-            fontSize: Dimensions.fontSizeDefault,
-            onPressed: () {
-              Get.back();
-              Get.toNamed(RouteHelper.getOrderRoute());
-            },
-          ) : GetBuilder<ProfileController>(builder: (pController) {
+          padding: const EdgeInsets.only(left: 20, right: 20),
+          child: isRunningOrderAvailable ? Row(children: [
+            Expanded(child: CustomButtonWidget(
+              buttonText: 'cancel'.tr,
+              color: context.bgNeutralMedium,
+              fontSize: Dimensions.fontSizeDefault,
+              textColor: Theme.of(context).textTheme.bodyLarge!.color,
+              onPressed: () => Get.back(),
+            )),
+            const SizedBox(width: Dimensions.paddingDefault),
+
+            Expanded(child: CustomButtonWidget(
+              buttonText: 'view_orders'.tr,
+              color: context.primary,
+              fontSize: Dimensions.fontSizeDefault,
+              onPressed: () {
+                Get.back();
+                Get.toNamed(RouteHelper.getOrderRoute());
+              },
+            )),
+          ]) : GetBuilder<ProfileController>(builder: (pController) {
             return pController.isLoading ? const Center(child: CircularProgressIndicator()) : Row(children: [
               Expanded(child: CustomButtonWidget(
                 buttonText: 'cancel'.tr,
@@ -79,7 +89,7 @@ class AccountDeletionBottomSheet extends StatelessWidget {
               const SizedBox(width: Dimensions.paddingDefault),
 
               Expanded(child: CustomButtonWidget(
-                buttonText: 'remove'.tr,
+                buttonText: 'delete'.tr,
                 color: Theme.of(context).colorScheme.error,
                 fontSize: Dimensions.fontSizeDefault,
                 isLoading: pController.isLoading,

@@ -37,6 +37,8 @@ import 'package:stackfood_multivendor/helper/splash_route_helper.dart';
 import 'package:stackfood_multivendor/util/app_constants.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:stackfood_multivendor/features/location/controllers/location_controller.dart';
 
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -48,6 +50,12 @@ class CheckoutController extends GetxController implements GetxService {
 
   AddressModel? _address;
   AddressModel? get address => _address;
+
+  bool _isLiveLocationLoading = false;
+  bool get isLiveLocationLoading => _isLiveLocationLoading;
+
+  bool _isLiveAddress = false;
+  bool get isLiveAddress => _isLiveAddress;
 
   Restaurant? _restaurant;
   Restaurant? get restaurant => _restaurant;
@@ -619,20 +627,61 @@ class CheckoutController extends GetxController implements GetxService {
     Get.find<CouponController>().removeCouponData(false);
     await Get.find<RestaurantController>().getRestaurantDetails(Restaurant(id: restaurantID));
     initializeTimeSlot(Get.find<RestaurantController>().restaurant!);
-    insertAddresses(null);
-    getDistanceFromRestaurant(Get.find<RestaurantController>().restaurant);
+    await initLiveAddress(force: true);
   }
 
   void getDistanceFromRestaurant(Restaurant? restaurant) {
     if(restaurant?.latitude == null || restaurant?.longitude == null) {
       return;
     }
-    AddressModel? address = AddressHelper.getAddressFromSharedPref();
+    AddressModel? address = _address ?? AddressHelper.getAddressFromSharedPref();
 
-    getDistanceInKM(
-      LatLng(double.parse(address?.latitude ?? '0'), double.parse(address?.longitude ?? '0')),
-      LatLng(double.parse(restaurant!.latitude!), double.parse(restaurant.longitude!)),
-    );
+    if(address?.latitude != null && address?.longitude != null) {
+      double? lat = double.tryParse(address!.latitude!);
+      double? lng = double.tryParse(address.longitude!);
+      double? restLat = double.tryParse(restaurant!.latitude!);
+      double? restLng = double.tryParse(restaurant.longitude!);
+      if(lat != null && lng != null && restLat != null && restLng != null) {
+        getDistanceInKM(LatLng(lat, lng), LatLng(restLat, restLng));
+      }
+    }
+  }
+
+  Future<void> initLiveAddress({bool force = false}) async {
+    if (_address != null && !force) {
+      return;
+    }
+    _isLiveLocationLoading = true;
+    update();
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
+        AddressModel liveAddress = await Get.find<LocationController>().getCurrentLocation(true, notify: false);
+        if (liveAddress.latitude != null && liveAddress.longitude != null) {
+          _isLiveAddress = true;
+          insertAddresses(liveAddress, notify: true, isLive: true);
+          await AddressHelper.saveAddressInSharedPref(liveAddress);
+          _isLiveLocationLoading = false;
+          update();
+          return;
+        }
+      }
+    } catch (e) {
+      debugPrint('[Checkout] Failed to get live location: $e');
+    }
+
+    _isLiveLocationLoading = false;
+    if (_address == null) {
+      AddressModel? fallback = AddressHelper.getAddressFromSharedPref();
+      if (fallback != null) {
+        _isLiveAddress = false;
+        insertAddresses(fallback, notify: true, isLive: false);
+      }
+    }
+    update();
   }
 
   bool isRestaurantClosed(DateTime dateTime, bool active, List<Schedules>? schedules, {int? customDateDuration}) {
@@ -791,11 +840,16 @@ class CheckoutController extends GetxController implements GetxService {
     return true;
   }
 
-  void insertAddresses(AddressModel? addressModel, {bool notify = false}){
+  void insertAddresses(AddressModel? addressModel, {bool notify = false, bool? isLive}){
     bool addressChanged = _address?.id != addressModel?.id || _address?.latitude != addressModel?.latitude
         || _address?.longitude != addressModel?.longitude;
 
     _address = addressModel;
+    if(isLive != null) {
+      _isLiveAddress = isLive;
+    } else if(_address != null && (_address?.id != null && _address!.id! > 0)) {
+      _isLiveAddress = false;
+    }
 
     addressType = _address?.addressType ?? '';
     addressController.text = _address?.address ?? '';
@@ -806,6 +860,17 @@ class CheckoutController extends GetxController implements GetxService {
     if(addressChanged) {
       _selectedCoverageArea = null;
     }
+
+    if(restaurant?.latitude != null && restaurant?.longitude != null && _address?.latitude != null && _address?.longitude != null) {
+      double? lat = double.tryParse(_address!.latitude!);
+      double? lng = double.tryParse(_address!.longitude!);
+      double? restLat = double.tryParse(restaurant!.latitude!);
+      double? restLng = double.tryParse(restaurant!.longitude!);
+      if(lat != null && lng != null && restLat != null && restLng != null) {
+        getDistanceInKM(LatLng(lat, lng), LatLng(restLat, restLng));
+      }
+    }
+
     if(notify) update();
   }
 
@@ -968,12 +1033,11 @@ class CheckoutController extends GetxController implements GetxService {
           String selectedUrl = '${AppConstants.baseUrl}/payment-mobile?order_id=$orderID&customer_id=${Get.find<ProfileController>().userInfoModel?.id ?? Get.find<AuthController>().getGuestId()}'
               '&payment_method=$digitalPaymentName&payment_platform=web&&callback=$protocol//$hostname${RouteHelper.orderSuccess}?id=$orderID&amount=$amount&pro_discount=$proDiscount&status=';
           html.window.open(selectedUrl,"_self");
-        } else{
+        } else {
           Get.offNamed(RouteHelper.getPaymentRoute(
             OrderModel(id: int.parse(orderID), userId: Get.find<ProfileController>().userInfoModel?.id ?? 0, orderAmount: amount, restaurant: Get.find<RestaurantController>().restaurant),
-            digitalPaymentName, guestId: Get.find<AuthController>().getGuestId(), contactNumber: contactNumber,
-          ),
-          );
+            digitalPaymentName ?? 'razor_pay', guestId: Get.find<AuthController>().getGuestId(), contactNumber: contactNumber,
+          ));
         }
       }
       clearPrevData();

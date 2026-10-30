@@ -1133,19 +1133,6 @@ class OrderInfoSection extends StatelessWidget {
                     child: CustomAssetImageWidget(Images.chatImageOrderDetails, height: 25, width: 25, fit: BoxFit.cover),
                   ) : const SizedBox(),
 
-                  SizedBox(width: order.restaurant!.phone != null ? Dimensions.paddingDefault : 0),
-
-                  order.restaurant!.phone != null ? InkWell(
-                    onTap: () async {
-                      if(await canLaunchUrlString('tel:${order.restaurant!.phone}')) {
-                        launchUrlString('tel:${order.restaurant!.phone}', mode: LaunchMode.externalApplication);
-                      }else {
-                        showCustomSnackBar('${'can_not_launch'.tr} ${order.restaurant!.phone}');
-                      }
-                    },
-                    child: CustomAssetImageWidget(Images.callImageOrderDetails, height: 25, width: 25, fit: BoxFit.cover),
-                  ) : const SizedBox(),
-
                   SizedBox(width: (!subscription && Get.find<SplashController>().configModel!.refundStatus! && delivered && orderController.orderDetails![0].itemCampaignId == null && !isGuestLoggedIn)
                       ? Dimensions.paddingDefault : 0),
 

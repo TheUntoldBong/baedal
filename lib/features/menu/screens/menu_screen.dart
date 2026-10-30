@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:stackfood_multivendor/util/color_resources.dart';
 import 'package:flutter/material.dart';
 
@@ -18,6 +19,7 @@ import 'package:stackfood_multivendor/features/notification/controllers/notifica
 import 'package:stackfood_multivendor/features/order/controllers/order_controller.dart';
 import 'package:stackfood_multivendor/features/pro/widgets/pro_badge_avatar_widget.dart';
 import 'package:stackfood_multivendor/features/profile/controllers/profile_controller.dart';
+import 'package:stackfood_multivendor/features/profile/widgets/account_deletion_bottom_sheet.dart';
 import 'package:stackfood_multivendor/features/profile/widgets/profile_stat_card_widget.dart';
 import 'package:stackfood_multivendor/features/splash/controllers/splash_controller.dart';
 import 'package:stackfood_multivendor/features/splash/controllers/theme_controller.dart';
@@ -92,11 +94,38 @@ class _MenuScreenState extends State<MenuScreen> {
                       GetBuilder<NotificationController>(builder: (notificationController) {
                         final int count = notificationController.unseenCount;
                         return PortionWidget(
-                          icon: Images.notificationIcon, title: 'notification'.tr, hideDivider: true,
+                          icon: Images.notificationIcon, title: 'notification'.tr, hideDivider: !isLoggedIn,
                           route: RouteHelper.getNotificationRoute(),
                           suffix: AuthHelper.isLoggedIn() && count > 0 ? (count > 999 ? '999+' : '$count') : null,
                         );
                       }),
+
+                      if(isLoggedIn) PortionWidget(
+                        icon: Images.profileDelete,
+                        title: 'delete_account'.tr,
+                        route: '',
+                        hideDivider: true,
+                        iconColor: Theme.of(context).colorScheme.error,
+                        textColor: Theme.of(context).colorScheme.error,
+                        onTap: () {
+                          showModalBottomSheet(
+                            isScrollControlled: true, useRootNavigator: true, context: context,
+                            backgroundColor: Colors.transparent,
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.only(topLeft: Radius.circular(Dimensions.radiusExtraLarge), topRight: Radius.circular(Dimensions.radiusExtraLarge)),
+                            ),
+                            builder: (context) {
+                              return ConstrainedBox(
+                                constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
+                                child: AccountDeletionBottomSheet(
+                                  profileController: profileController,
+                                  isRunningOrderAvailable: Get.find<OrderController>().runningOrders?.isNotEmpty ?? false,
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
                     ]),
                   ),
                   const SizedBox(height: Dimensions.paddingLarge),
@@ -173,6 +202,39 @@ class _MenuScreenState extends State<MenuScreen> {
                     ]),
                   ),
                   const SizedBox(height: Dimensions.paddingLarge),
+
+                  isLoggedIn ? Padding(
+                    padding: const EdgeInsets.only(bottom: Dimensions.paddingSmall),
+                    child: InkWell(
+                      onTap: () {
+                        showModalBottomSheet(
+                          isScrollControlled: true, useRootNavigator: true, context: context,
+                          backgroundColor: Colors.transparent,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.only(topLeft: Radius.circular(Dimensions.radiusExtraLarge), topRight: Radius.circular(Dimensions.radiusExtraLarge)),
+                          ),
+                          builder: (context) {
+                            return ConstrainedBox(
+                              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
+                              child: AccountDeletionBottomSheet(
+                                profileController: profileController,
+                                isRunningOrderAvailable: Get.find<OrderController>().runningOrders?.isNotEmpty ?? false,
+                              ),
+                            );
+                          },
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSmall),
+                        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                          Icon(CupertinoIcons.delete, size: 16, color: Theme.of(context).colorScheme.error),
+                          const SizedBox(width: Dimensions.padding2xSmall),
+
+                          Text('delete_account'.tr, style: context.subHeading.defaultSize.medium.overrideWith(color: Theme.of(context).colorScheme.error)),
+                        ]),
+                      ),
+                    ),
+                  ) : const SizedBox(),
 
                   isLoggedIn ? InkWell(
                     onTap: () async {

@@ -9,6 +9,9 @@ import 'package:stackfood_multivendor/common/widgets/custom_card.dart';
 import 'package:stackfood_multivendor/features/auth/controllers/auth_controller.dart';
 import 'package:stackfood_multivendor/features/language/controllers/localization_controller.dart';
 import 'package:stackfood_multivendor/features/language/widgets/language_bottom_sheet_widget.dart';
+import 'package:stackfood_multivendor/features/order/controllers/order_controller.dart';
+import 'package:stackfood_multivendor/features/profile/controllers/profile_controller.dart';
+import 'package:stackfood_multivendor/features/profile/widgets/account_deletion_bottom_sheet.dart';
 import 'package:stackfood_multivendor/features/profile/widgets/notification_status_change_bottom_sheet.dart';
 import 'package:stackfood_multivendor/features/splash/controllers/theme_controller.dart';
 import 'package:stackfood_multivendor/helper/route_helper.dart';
@@ -95,6 +98,35 @@ class SettingsScreen extends StatelessWidget {
               );
             }),
 
+            if(isLoggedIn) ...[
+              _Divider(),
+
+              SettingsButton(
+                icon: Images.profileDelete,
+                title: 'delete_account'.tr,
+                iconColor: Theme.of(context).colorScheme.error,
+                textColor: Theme.of(context).colorScheme.error,
+                onTap: () {
+                  showModalBottomSheet(
+                    isScrollControlled: true, useRootNavigator: true, context: context,
+                    backgroundColor: Colors.transparent,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.only(topLeft: Radius.circular(Dimensions.radiusExtraLarge), topRight: Radius.circular(Dimensions.radiusExtraLarge)),
+                    ),
+                    builder: (context) {
+                      return ConstrainedBox(
+                        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
+                        child: AccountDeletionBottomSheet(
+                          profileController: Get.find<ProfileController>(),
+                          isRunningOrderAvailable: Get.find<OrderController>().runningOrders?.isNotEmpty ?? false,
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ],
+
           ]),
         ),
       ),
@@ -126,7 +158,17 @@ class SettingsButton extends StatelessWidget {
   final String title;
   final Function onTap;
   final Widget? trailing;
-  const SettingsButton({super.key, required this.icon, required this.title, required this.onTap, this.trailing});
+  final Color? textColor;
+  final Color? iconColor;
+  const SettingsButton({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.onTap,
+    this.trailing,
+    this.textColor,
+    this.iconColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -138,11 +180,11 @@ class SettingsButton extends StatelessWidget {
 
           CustomAssetImageWidget(
             icon, height: 20, width: 20,
-            color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.6),
+            color: iconColor ?? Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.6),
           ),
           const SizedBox(width: Dimensions.paddingMedium),
 
-          Expanded(child: Text(title, style: context.heading.defaultSize.medium)),
+          Expanded(child: Text(title, style: context.heading.defaultSize.medium.overrideWith(color: textColor))),
 
           ?trailing,
 

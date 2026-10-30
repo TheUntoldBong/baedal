@@ -16,7 +16,20 @@ class PortionWidget extends StatelessWidget {
   final String? suffix;
   final Function()? onTap;
   final bool changeIconColor;
-  const PortionWidget({super.key, required this.icon, required this.title, required this.route, this.hideDivider = false, this.suffix, this.onTap, this.changeIconColor = true});
+  final Color? textColor;
+  final Color? iconColor;
+  const PortionWidget({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.route,
+    this.hideDivider = false,
+    this.suffix,
+    this.onTap,
+    this.changeIconColor = true,
+    this.textColor,
+    this.iconColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -28,10 +41,15 @@ class PortionWidget extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingDefault),
           child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
 
-            CustomAssetImageWidget(icon, height: _iconSize, width: _iconSize, color: changeIconColor ? context.iconBaseMedium : null),
+            CustomAssetImageWidget(
+              icon,
+              height: _iconSize,
+              width: _iconSize,
+              color: iconColor ?? (changeIconColor ? context.iconBaseMedium : null),
+            ),
             const SizedBox(width: Dimensions.paddingMedium),
 
-            Expanded(child: Text(title, style: context.heading.defaultSize.medium)),
+            Expanded(child: Text(title, style: context.heading.defaultSize.medium.overrideWith(color: textColor))),
 
             if(suffix != null) ...[
               const SizedBox(width: Dimensions.paddingSmall),

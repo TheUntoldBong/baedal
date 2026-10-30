@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:just_the_tooltip/just_the_tooltip.dart';
 import 'package:stackfood_multivendor/common/widgets/custom_button_widget.dart';
+import 'package:stackfood_multivendor/common/widgets/custom_asset_image_widget.dart';
 import 'package:stackfood_multivendor/common/widgets/custom_image_widget.dart';
+import 'package:stackfood_multivendor/util/images.dart';
 import 'package:stackfood_multivendor/common/widgets/custom_ink_well_widget.dart';
 import 'package:stackfood_multivendor/common/widgets/custom_text_field_widget.dart';
 import 'package:stackfood_multivendor/features/auth/controllers/auth_controller.dart';
 import 'package:stackfood_multivendor/features/business/controllers/business_controller.dart';
 import 'package:stackfood_multivendor/features/checkout/controllers/checkout_controller.dart';
-import 'package:stackfood_multivendor/features/checkout/widgets/offline_payment_button.dart';
 import 'package:stackfood_multivendor/features/profile/controllers/profile_controller.dart';
 import 'package:stackfood_multivendor/features/splash/controllers/splash_controller.dart';
 import 'package:stackfood_multivendor/helper/price_converter.dart';
@@ -124,77 +125,38 @@ class _PaymentMethodBottomSheetState extends State<PaymentMethodBottomSheet> {
                       Text(PriceConverter.convertPrice(widget.totalPrice), style: context.heading.overLarge.medium.overrideWith(color: context.primary)),
                       const SizedBox(height: Dimensions.paddingLarge),
 
-                      walletView(checkoutController),
-
-                      !widget.isSubscriptionPackage && widget.isCashOnDeliveryActive && notHideCod ? paymentButtonView(
-                        padding: EdgeInsets.only(bottom: Dimensions.paddingDefault),
-                        title: isDineInSelect ? 'pay_after_service'.tr : 'cash_on_delivery'.tr,
-                        isSelected: checkoutController.paymentMethodIndex == 0,
-                        disablePayments: disablePayments,
-                        onTap: disablePayments ? null : (){
-                          checkoutController.setPaymentMethod(0);
-                        },
-                      ) : const SizedBox(),
-
-                      checkoutController.subscriptionOrder || !notHideCod ? SizedBox() : changeAmountView(checkoutController),
-
-                      widget.isDigitalPaymentActive && notHideDigital && !checkoutController.subscriptionOrder && Get.find<SplashController>().configModel!.activePaymentMethodList!.isNotEmpty ? Container(
-                        padding: const EdgeInsets.all(Dimensions.paddingSmall),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(Dimensions.radiusExtraSmall),
-                          border: Border.all(color: context.outline, width: 0.2),
+                      // 1. Online Payment (Razorpay)
+                      if (widget.isDigitalPaymentActive && !checkoutController.subscriptionOrder)
+                        paymentButtonView(
+                          padding: const EdgeInsets.only(bottom: Dimensions.paddingDefault),
+                          title: 'Online Payment (UPI, Cards, NetBanking)',
+                          assetImage: Images.digitalPayment,
+                          isSelected: checkoutController.paymentMethodIndex == 2,
+                          disablePayments: disablePayments,
+                          isDigitalPayment: true,
+                          onTap: disablePayments ? null : () {
+                            if (widget.isSubscriptionPackage) {
+                              businessController.setPaymentIndex(1);
+                              businessController.changeDigitalPaymentName('razor_pay');
+                            } else {
+                              checkoutController.setPaymentMethod(2);
+                              checkoutController.changeDigitalPaymentName('razor_pay');
+                            }
+                          },
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('pay_via_online'.tr, style: context.subHeading.defaultSize.semiBold.overrideWith(color: disablePayments ? context.textBaseMedium : context.textBaseDefault)),
-                            const SizedBox(height: Dimensions.paddingSmall),
 
-                            ListView.builder(
-                              itemCount: Get.find<SplashController>().configModel!.activePaymentMethodList!.length,
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              padding: EdgeInsets.zero,
-                              itemBuilder: (context, index){
-                                bool isSelected;
-                                if(widget.isSubscriptionPackage) {
-                                  isSelected = businessController.paymentIndex == 1 && Get.find<SplashController>().configModel!.activePaymentMethodList![index].getWay! == businessController.digitalPaymentName;
-                                } else {
-                                  isSelected = checkoutController.paymentMethodIndex == 2 && Get.find<SplashController>().configModel!.activePaymentMethodList![index].getWay! == checkoutController.digitalPaymentName;
-                                }
-                                return paymentButtonView(
-                                  padding: EdgeInsets.only(bottom: index == Get.find<SplashController>().configModel!.activePaymentMethodList!.length - 1 ? 0 : Dimensions.paddingSmall),
-                                  disablePayments: disablePayments,
-                                  isDigitalPayment: true,
-                                  onTap: disablePayments ? null : (){
-                                    if(widget.isSubscriptionPackage) {
-                                      businessController.setPaymentIndex(1);
-                                      businessController.changeDigitalPaymentName(Get.find<SplashController>().configModel!.activePaymentMethodList![index].getWay!);
-                                    } else {
-                                      checkoutController.setPaymentMethod(2);
-                                      checkoutController.changeDigitalPaymentName(Get.find<SplashController>().configModel!.activePaymentMethodList![index].getWay!);
-                                    }
-                                  },
-                                  title: Get.find<SplashController>().configModel!.activePaymentMethodList![index].getWayTitle!,
-                                  isSelected: isSelected,
-                                  image: Get.find<SplashController>().configModel!.activePaymentMethodList![index].getWayImageFullUrl,
-                                );
-                              }),
-                          ],
+                      // 2. Cash On Delivery (COD)
+                      if (!widget.isSubscriptionPackage && widget.isCashOnDeliveryActive)
+                        paymentButtonView(
+                          padding: const EdgeInsets.only(bottom: Dimensions.paddingDefault),
+                          title: isDineInSelect ? 'pay_after_service'.tr : 'cash_on_delivery'.tr,
+                          assetImage: Images.cash,
+                          isSelected: checkoutController.paymentMethodIndex == 0,
+                          disablePayments: disablePayments,
+                          onTap: disablePayments ? null : () {
+                            checkoutController.setPaymentMethod(0);
+                          },
                         ),
-                      ) : const SizedBox(),
-                      const SizedBox(height: Dimensions.paddingDefault),
-
-                      widget.isOfflinePaymentActive && notHideOffline && !checkoutController.subscriptionOrder ? OfflinePaymentButton(
-                        isSelected: checkoutController.paymentMethodIndex == 3,
-                        offlineMethodList: checkoutController.offlineMethodList,
-                        isOfflinePaymentActive: widget.isOfflinePaymentActive,
-                        onTap: disablePayments ? null : () {
-                          checkoutController.setPaymentMethod(3);
-                        },
-                        checkoutController: checkoutController, tooltipController: tooltipController,
-                        disablePayment: disablePayments,
-                      ) : const SizedBox(),
 
                     ],
                   ),
@@ -222,39 +184,68 @@ class _PaymentMethodBottomSheetState extends State<PaymentMethodBottomSheet> {
     );
   }
 
-  Widget paymentButtonView({required String title, String? image, required bool isSelected, required Function? onTap, bool disablePayments = false, bool isDigitalPayment = false, required EdgeInsetsGeometry padding}) {
+  Widget paymentButtonView({
+    required String title,
+    String? image,
+    String? assetImage,
+    required bool isSelected,
+    required Function? onTap,
+    bool disablePayments = false,
+    bool isDigitalPayment = false,
+    required EdgeInsetsGeometry padding,
+  }) {
     return Padding(
       padding: padding,
       child: InkWell(
         onTap: onTap as void Function()?,
         child: Container(
-          decoration: image != null ? null : BoxDecoration(
-            borderRadius: BorderRadius.circular(Dimensions.radiusExtraSmall),
-            border: Border.all(color: isSelected && isDigitalPayment ? context.primary.withValues(alpha: 0.2) : context.outlineVariant),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
+            border: Border.all(
+              color: isSelected ? context.primary : context.outlineVariant,
+              width: isSelected ? 1.5 : 1,
+            ),
+            color: isSelected ? context.primary.withValues(alpha: 0.05) : context.surface,
           ),
-          padding: const EdgeInsets.all(Dimensions.paddingSmall),
+          padding: const EdgeInsets.all(Dimensions.paddingDefault),
           child: Row(children: [
-
-            image != null ? CustomImageWidget(
-              height: 32, width: 36, fit: BoxFit.contain,
-              image: image, color: disablePayments ? context.iconBaseMedium : null,
-            ) : const SizedBox(),
-            const SizedBox(width: Dimensions.paddingSmall),
+            if (assetImage != null)
+              Container(
+                height: 36,
+                width: 36,
+                padding: const EdgeInsets.all(Dimensions.paddingExtraSmall),
+                decoration: BoxDecoration(
+                  color: isSelected ? context.primary.withValues(alpha: 0.1) : context.surfaceContainer,
+                  shape: BoxShape.circle,
+                ),
+                child: CustomAssetImageWidget(assetImage, fit: BoxFit.contain),
+              )
+            else if (image != null)
+              CustomImageWidget(
+                height: 32,
+                width: 36,
+                fit: BoxFit.contain,
+                image: image,
+                color: disablePayments ? context.iconBaseMedium : null,
+              )
+            else
+              const SizedBox(),
+            const SizedBox(width: Dimensions.paddingDefault),
 
             Expanded(
               child: Text(
                 title,
-                style: isDigitalPayment ? context.subHeading.small.medium.overrideWith(color: disablePayments ? context.textBaseMedium : context.textBaseDefault) :
-                context.subHeading.defaultSize.semiBold.overrideWith(color: disablePayments ? context.textBaseMedium : context.textBaseDefault),
+                style: context.heading.defaultSize.semiBold.overrideWith(
+                  color: isSelected ? context.primary : (disablePayments ? context.textBaseMedium : context.textBaseDefault),
+                ),
               ),
             ),
 
             Icon(
               isSelected ? Icons.check_circle : Icons.circle_outlined,
-              size: 24,
+              size: 22,
               color: isSelected ? context.primary : context.iconDisabledDefault,
             ),
-
           ]),
         ),
       ),

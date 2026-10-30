@@ -275,12 +275,41 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
               )),
 
               SafeArea(
-                child: CustomButtonWidget(
-                  isLoading: profileController.isLoading,
-                  onPressed: () => _updateProfile(profileController: profileController, fromButton: true, fromPhone: false),
-                  margin: EdgeInsets.all(Dimensions.paddingDefault),
-                  buttonText: 'update_profile'.tr,
-                ),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  CustomButtonWidget(
+                    isLoading: profileController.isLoading,
+                    onPressed: () => _updateProfile(profileController: profileController, fromButton: true, fromPhone: false),
+                    margin: const EdgeInsets.symmetric(horizontal: Dimensions.paddingDefault),
+                    buttonText: 'update_profile'.tr,
+                  ),
+
+                  const SizedBox(height: Dimensions.paddingSmall),
+
+                  TextButton.icon(
+                    onPressed: () {
+                      showModalBottomSheet(
+                        isScrollControlled: true, useRootNavigator: true, context: context,
+                        backgroundColor: Colors.transparent,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.only(topLeft: Radius.circular(Dimensions.radiusExtraLarge), topRight: Radius.circular(Dimensions.radiusExtraLarge)),
+                        ),
+                        builder: (context) {
+                          return ConstrainedBox(
+                            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
+                            child: AccountDeletionBottomSheet(
+                              profileController: profileController,
+                              isRunningOrderAvailable: orderController.runningOrders?.isNotEmpty ?? false,
+                            ),
+                          );
+                        },
+                      );
+                    },
+                    icon: Icon(CupertinoIcons.delete, color: Theme.of(context).colorScheme.error, size: 18),
+                    label: Text('delete_account'.tr, style: context.body.defaultSize.medium.overrideWith(color: Theme.of(context).colorScheme.error)),
+                  ),
+
+                  const SizedBox(height: Dimensions.paddingExtraSmall),
+                ]),
               ),
 
             ]) : const Center(child: CircularProgressIndicator()) : NotLoggedInScreen(callBack: (value){

@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:stackfood_multivendor/common/widgets/custom_asset_image_widget.dart';
+import 'package:stackfood_multivendor/common/widgets/custom_bottom_sheet_widget.dart';
 import 'package:stackfood_multivendor/common/widgets/custom_text_field_widget.dart';
-import 'package:stackfood_multivendor/features/address/controllers/address_controller.dart';
 import 'package:stackfood_multivendor/features/address/domain/models/address_model.dart';
-import 'package:stackfood_multivendor/features/address/screens/set_location_screen.dart';
 import 'package:stackfood_multivendor/features/checkout/controllers/checkout_controller.dart';
 import 'package:stackfood_multivendor/features/checkout/widgets/delivery_address_bottom_sheet.dart';
+import 'package:stackfood_multivendor/features/checkout/widgets/saved_address_bottom_sheet.dart';
 import 'package:stackfood_multivendor/features/location/controllers/location_controller.dart';
-import 'package:stackfood_multivendor/helper/address_helper.dart';
-import 'package:stackfood_multivendor/helper/auth_helper.dart';
 import 'package:stackfood_multivendor/helper/responsive_helper.dart';
 import 'package:stackfood_multivendor/helper/route_helper.dart';
 import 'package:stackfood_multivendor/util/color_resources.dart';
@@ -52,38 +49,16 @@ class _DeliverySectionState extends State<DeliverySection> {
   void initState() {
     super.initState();
     widget.checkoutController.setShowMoreDetails(false, willUpdate: false);
-    if (AuthHelper.isLoggedIn()&& Get.find<AddressController>().addressList != null && Get.find<AddressController>().addressList!.isNotEmpty) {
-      try {
-        AddressModel? addressModel = Get.find<AddressController>().addressList!.firstWhere((address) => address.isDefault!);
-        widget.checkoutController.insertAddresses(addressModel);
-      } catch (e) {
-        widget.checkoutController.insertAddresses(Get.find<AddressController>().addressList!.first);
-      }
-    } else {
-      widget.checkoutController.insertAddresses(AddressHelper.getAddressFromSharedPref());
-    }
-  }
-
-  Future<void> _navigateToSetLocation(CheckoutController checkoutController) async {
-    var address = await Get.toNamed(
-      RouteHelper.getSetLocationRoute(),
-      arguments: SetLocationScreen(initialAddress: checkoutController.addressController.text.trim()),
-    );
-    if(address != null && checkoutController.restaurant != null) {
-      checkoutController.insertAddresses(address, notify: true);
-
-      checkoutController.getDistanceInKM(
-        LatLng(double.parse(address.latitude), double.parse(address.longitude)),
-        LatLng(double.parse(checkoutController.restaurant!.latitude!), double.parse(checkoutController.restaurant!.longitude!)),
-      );
+    if (widget.checkoutController.address == null) {
+      widget.checkoutController.initLiveAddress();
     }
   }
 
   void _onEditAddressTap(CheckoutController checkoutController) {
-    if(checkoutController.needCoverageAreaSelection) {
-      showDeliveryAddressBottomSheet();
+    if(ResponsiveHelper.isDesktop(context)) {
+      Get.dialog(const Dialog(backgroundColor: Colors.transparent, child: SavedAddressBottomSheet()));
     } else {
-      _navigateToSetLocation(checkoutController);
+      showCustomBottomSheet(child: const SavedAddressBottomSheet());
     }
   }
 
@@ -98,87 +73,131 @@ class _DeliverySectionState extends State<DeliverySection> {
       return Column(children: [
         !homeDelivery ? _RestaurantLocationCard(checkoutController: checkoutController, isDesktop: isDesktop)
         : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Container(
-            margin: EdgeInsets.symmetric(horizontal: isDesktop ? Dimensions.paddingLarge : Dimensions.paddingDefault),
-            padding: const EdgeInsets.all(Dimensions.paddingMedium),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-              color: context.surface,
-            ),
-            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Align( alignment: Alignment.topCenter,
-                child: Container(
-                  width: 28, height: 28, padding: EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: context.surfaceContainer,
-                    shape: BoxShape.circle,
-                  ),
-                  child: CustomAssetImageWidget(
-                    checkoutController.addressType == 'home' ? Images.homeIcon : checkoutController.addressType == 'office' ? Images.workIcon : Images.otherIcon,
-                    height: ResponsiveHelper.isDesktop(context) ? 25 : 18, width: ResponsiveHelper.isDesktop(context) ? 25 : 18,
-                    color: Theme.of(context).textTheme.bodyLarge?.color,
+          InkWell(
+            onTap: () => _onEditAddressTap(checkoutController),
+            borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
+            child: Container(
+              margin: EdgeInsets.symmetric(horizontal: isDesktop ? Dimensions.paddingLarge : Dimensions.paddingDefault),
+              padding: const EdgeInsets.all(Dimensions.paddingMedium),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
+                color: context.surface,
+              ),
+              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Align( alignment: Alignment.topCenter,
+                  child: Container(
+                    width: 28, height: 28, padding: EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: context.surfaceContainer,
+                      shape: BoxShape.circle,
+                    ),
+                    child: CustomAssetImageWidget(
+                      checkoutController.addressType == 'home' ? Images.homeIcon : checkoutController.addressType == 'office' ? Images.workIcon : Images.otherIcon,
+                      height: ResponsiveHelper.isDesktop(context) ? 25 : 18, width: ResponsiveHelper.isDesktop(context) ? 25 : 18,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: Dimensions.paddingMedium),
-        
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(
-                    "delivery_address".tr,
-                    style: context.heading.large.strong,
-                  ),
-                  const SizedBox(height: Dimensions.padding2xSmall),
-        
-                  Text(
-                    checkoutController.addressController.text.trim(),
-                    style: context.subHeading.defaultSize.regular.overrideWith(color: context.textBaseMedium),
-                    maxLines: 2, overflow: TextOverflow.ellipsis,
-                  ),
-
-                  checkoutController.needCoverageAreaSelection ? Padding(
-                    padding: const EdgeInsets.only(top: Dimensions.paddingSmall),
-                    child: checkoutController.selectedCoverageArea != null ? RichText(
-                      text: TextSpan(
-                        text: '${checkoutController.isZipCodeWiseDelivery ? 'zip_code'.tr : 'area'.tr} : ',
-                        style: context.subHeading.defaultSize.semiBold.overrideWith(color: context.textBaseMedium),
-                        children: [
-                          TextSpan(
-                            text: checkoutController.selectedCoverageArea!.name ?? '',
-                            style: context.subHeading.defaultSize.semiBold.overrideWith(color: context.textBaseMedium),
-                          ),
-                        ],
-                      ),
-                      maxLines: 1, overflow: TextOverflow.ellipsis,
-                    ) : InkWell(
-                      onTap: showDeliveryAddressBottomSheet,
-                      child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        RichText(
-                          text: TextSpan(
-                            text: checkoutController.isZipCodeWiseDelivery ? 'select_zip_code'.tr : 'select_area'.tr,
-                            style: context.subHeading.defaultSize.semiBold.overrideWith(color: context.textBaseMedium),
+                const SizedBox(width: Dimensions.paddingMedium),
+          
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: Dimensions.paddingSmall,
+                            runSpacing: 4,
                             children: [
-                              TextSpan(text: ' *', style: context.subHeading.defaultSize.semiBold.overrideWith(color: context.error)),
+                              Text(
+                                "delivery_address".tr,
+                                style: context.heading.large.strong,
+                              ),
+                              if (checkoutController.isLiveAddress)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                                    Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
+                                    const SizedBox(width: 4),
+                                    Text('live'.tr.isEmpty ? 'Live' : 'live'.tr, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.green)),
+                                  ]),
+                                ),
                             ],
                           ),
-                          maxLines: 1, overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(width: Dimensions.padding2xSmall),
+                        const SizedBox(width: Dimensions.paddingSmall),
 
-                        Icon(Icons.keyboard_arrow_down, size: 18, color: context.primary),
-                      ]),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: context.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
+                            border: Border.all(color: context.primary.withValues(alpha: 0.3)),
+                          ),
+                          child: Row(mainAxisSize: MainAxisSize.min, children: [
+                            Icon(Icons.edit_location_alt_outlined, size: 14, color: context.primary),
+                            const SizedBox(width: 4),
+                            Text(
+                              'change'.tr.isEmpty ? 'Change' : 'change'.tr,
+                              style: context.subHeading.small.semiBold.overrideWith(color: context.primary),
+                            ),
+                          ]),
+                        ),
+                      ],
                     ),
-                  ) : const SizedBox(),
-                ]),
-              ),
-              Align(
-                alignment: AlignmentGeometry.center,
-                child: InkWell(
-                  onTap: () => _onEditAddressTap(checkoutController),
-                  child: CustomAssetImageWidget(Images.editBtn, width: 20),
+                    const SizedBox(height: Dimensions.padding2xSmall),
+          
+                    Text(
+                      checkoutController.isLiveLocationLoading && checkoutController.addressController.text.trim().isEmpty
+                          ? 'fetching_location'.tr
+                          : checkoutController.addressController.text.trim(),
+                      style: context.subHeading.defaultSize.regular.overrideWith(color: context.textBaseMedium),
+                      maxLines: 2, overflow: TextOverflow.ellipsis,
+                    ),
+
+                    checkoutController.needCoverageAreaSelection ? Padding(
+                      padding: const EdgeInsets.only(top: Dimensions.paddingSmall),
+                      child: checkoutController.selectedCoverageArea != null ? RichText(
+                        text: TextSpan(
+                          text: '${checkoutController.isZipCodeWiseDelivery ? 'zip_code'.tr : 'area'.tr} : ',
+                          style: context.subHeading.defaultSize.semiBold.overrideWith(color: context.textBaseMedium),
+                          children: [
+                            TextSpan(
+                              text: checkoutController.selectedCoverageArea!.name ?? '',
+                              style: context.subHeading.defaultSize.semiBold.overrideWith(color: context.textBaseMedium),
+                            ),
+                          ],
+                        ),
+                        maxLines: 1, overflow: TextOverflow.ellipsis,
+                      ) : InkWell(
+                        onTap: showDeliveryAddressBottomSheet,
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          RichText(
+                            text: TextSpan(
+                              text: checkoutController.isZipCodeWiseDelivery ? 'select_zip_code'.tr : 'select_area'.tr,
+                              style: context.subHeading.defaultSize.semiBold.overrideWith(color: context.textBaseMedium),
+                              children: [
+                                TextSpan(text: ' *', style: context.subHeading.defaultSize.semiBold.overrideWith(color: context.error)),
+                              ],
+                            ),
+                            maxLines: 1, overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(width: Dimensions.padding2xSmall),
+
+                          Icon(Icons.keyboard_arrow_down, size: 18, color: context.primary),
+                        ]),
+                      ),
+                    ) : const SizedBox(),
+                  ]),
                 ),
-              ),
-            ]),
+              ]),
+            ),
           ),
           SizedBox(height: checkoutController.streetNumberController.text.isNotEmpty || checkoutController.houseController.text.isNotEmpty || checkoutController.floorController.text.isNotEmpty ? Dimensions.paddingDefault : 0),
         
