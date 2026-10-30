@@ -86,6 +86,14 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>upi</string>
+		<string>phonepe</string>
+		<string>gpay</string>
+		<string>paytmmp</string>
+		<string>bhim</string>
+	</array>
 	<key>UIApplicationSceneManifest</key>
         <dict>
             <key>UIApplicationSupportsMultipleScenes</key>

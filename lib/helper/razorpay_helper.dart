@@ -79,14 +79,20 @@ class RazorpayHelper {
     var options = {
       'key': key,
       'amount': (amount * 100).round(),
+      'currency': 'INR',
       'name': Get.find<SplashController>().configModel?.businessName ?? AppConstants.appName,
       'description': 'Order #$orderId',
+      'timeout': 120,
       'prefill': prefill,
       'theme': {
         'color': '#20A7DB',
       },
       'notes': {
         'order_id': orderId,
+      },
+      'retry': {
+        'enabled': true,
+        'max_count': 1,
       },
       'external': {
         'wallets': ['paytm']
