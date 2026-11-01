@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:stackfood_multivendor/common/models/response_model.dart';
 import 'package:stackfood_multivendor/features/auth/domain/models/auth_response_model.dart';
 import 'package:stackfood_multivendor/features/auth/domain/models/signup_body_model.dart';
@@ -63,7 +64,7 @@ class AuthService implements AuthServiceInterface{
   Future<void> _updateHeaderFunctionality(AuthResponseModel authResponse, {bool alreadyInApp = false}) async {
     if(authResponse.isEmailVerified! && authResponse.isPhoneVerified! && authResponse.isPersonalInfo! && authResponse.token != null && authResponse.isExistUser == null) {
       authRepoInterface.saveUserToken(authResponse.token??'', alreadyInApp: alreadyInApp);
-      await authRepoInterface.updateToken();
+      unawaited(authRepoInterface.updateToken());
       await authRepoInterface.clearGuestId();
     }
   }

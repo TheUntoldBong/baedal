@@ -625,9 +625,24 @@ class CheckoutController extends GetxController implements GetxService {
 
   Future<void> initCheckoutData(int? restaurantID) async {
     Get.find<CouponController>().removeCouponData(false);
+
+    // Seed saved address immediately so distance and checkout UI render without delay
+    AddressModel? initialAddress = _address ?? AddressHelper.getAddressFromSharedPref();
+    if (initialAddress != null) {
+      insertAddresses(initialAddress, notify: false, isLive: false);
+    }
+
     await Get.find<RestaurantController>().getRestaurantDetails(Restaurant(id: restaurantID));
-    initializeTimeSlot(Get.find<RestaurantController>().restaurant!);
-    await initLiveAddress(force: true);
+    Restaurant? rest = Get.find<RestaurantController>().restaurant;
+    if (rest != null) {
+      initializeTimeSlot(rest);
+      getDistanceFromRestaurant(rest);
+    }
+
+    // Only query live location if no address exists yet, with a strict non-blocking timeout
+    if (_address == null) {
+      await initLiveAddress(force: false);
+    }
   }
 
   void getDistanceFromRestaurant(Restaurant? restaurant) {
@@ -655,11 +670,12 @@ class CheckoutController extends GetxController implements GetxService {
     update();
     try {
       LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
       if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
-        AddressModel liveAddress = await Get.find<LocationController>().getCurrentLocation(true, notify: false);
+        AddressModel liveAddress = await Get.find<LocationController>()
+            .getCurrentLocation(true, notify: false)
+            .timeout(const Duration(seconds: 4), onTimeout: () {
+          return AddressHelper.getAddressFromSharedPref() ?? AddressModel();
+        });
         if (liveAddress.latitude != null && liveAddress.longitude != null) {
           _isLiveAddress = true;
           insertAddresses(liveAddress, notify: true, isLive: true);

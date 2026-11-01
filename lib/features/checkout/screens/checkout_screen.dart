@@ -130,7 +130,11 @@ class CheckoutScreenState extends State<CheckoutScreen> {
     _cartList = [];
 
     if(widget.fromCart){
-      await Get.find<CartController>().getCartDataOnline(widget.restaurantId!);
+      if(Get.find<CartController>().cartList(widget.restaurantId!).isEmpty) {
+        await Get.find<CartController>().getCartDataOnline(widget.restaurantId!);
+      } else {
+        Get.find<CartController>().getCartDataOnline(widget.restaurantId!);
+      }
     }
     widget.fromCart ? _cartList!.addAll(Get.find<CartController>().cartList(widget.restaurantId!)) : _cartList!.addAll(widget.cartList!);
 

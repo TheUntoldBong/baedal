@@ -20,7 +20,7 @@ class ApiClient extends GetxService {
   final String appBaseUrl;
   final SharedPreferences sharedPreferences;
   static final String noInternetMessage = 'connection_to_api_server_failed'.tr;
-  final int timeoutInSeconds = 30;
+  final int timeoutInSeconds = 20;
 
   String? token;
   late Map<String, String> _mainHeaders;

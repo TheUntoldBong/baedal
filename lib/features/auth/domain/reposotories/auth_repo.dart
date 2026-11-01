@@ -52,7 +52,10 @@ class AuthRepo implements AuthRepoInterface<SignUpBodyModel> {
         deviceToken = await _saveDeviceToken();
       }
       if(!GetPlatform.isWeb) {
-        FirebaseMessaging.instance.subscribeToTopic('zone_${AddressHelper.getAddressFromSharedPref()!.zoneId}_customer');
+        final address = AddressHelper.getAddressFromSharedPref();
+        if (address != null && address.zoneId != null) {
+          FirebaseMessaging.instance.subscribeToTopic('zone_${address.zoneId}_customer');
+        }
       }
     }
     return await apiClient.postData(AppConstants.tokenUri, {"_method": "put", "cm_firebase_token": notificationDeviceToken.isNotEmpty ? notificationDeviceToken : deviceToken??'@'});
@@ -219,7 +222,10 @@ class AuthRepo implements AuthRepoInterface<SignUpBodyModel> {
   Future<bool> clearSharedData({bool removeToken = true}) async {
     if(!GetPlatform.isWeb) {
       FirebaseMessaging.instance.unsubscribeFromTopic(AppConstants.topic);
-      FirebaseMessaging.instance.unsubscribeFromTopic('zone_${AddressHelper.getAddressFromSharedPref()!.zoneId}_customer');
+      final address = AddressHelper.getAddressFromSharedPref();
+      if (address != null && address.zoneId != null) {
+        FirebaseMessaging.instance.unsubscribeFromTopic('zone_${address.zoneId}_customer');
+      }
       if(removeToken) {
         await apiClient.postData(AppConstants.tokenUri, {"_method": "put", "cm_firebase_token": '@'});
       }
@@ -253,7 +259,10 @@ class AuthRepo implements AuthRepoInterface<SignUpBodyModel> {
         await updateToken(notificationDeviceToken: '@');
         FirebaseMessaging.instance.unsubscribeFromTopic(AppConstants.topic);
         if(isLoggedIn()) {
-          FirebaseMessaging.instance.unsubscribeFromTopic('zone_${AddressHelper.getAddressFromSharedPref()!.zoneId}_customer');
+          final address = AddressHelper.getAddressFromSharedPref();
+          if (address != null && address.zoneId != null) {
+            FirebaseMessaging.instance.unsubscribeFromTopic('zone_${address.zoneId}_customer');
+          }
         }
       }
     }
