@@ -34,10 +34,10 @@ class ProfileButtonWidget extends StatelessWidget {
           boxShadow: isThemeSwitchButton ? null : [BoxShadow(color: context.primary.withValues(alpha: 0.05), spreadRadius: 0, blurRadius: 4)],
         ),
         child: Row(children: [
-          iconImage != null ? CustomAssetImageWidget(iconImage!, height: 18, width: 25) : Icon(icon, size: isThemeSwitchButton ? 20 : 25, color: color ?? context.textBaseDefault),
+          iconImage != null ? CustomAssetImageWidget(iconImage!, height: 18, width: 25, color: color) : Icon(icon, size: isThemeSwitchButton ? 20 : 25, color: color ?? context.textBaseDefault),
           const SizedBox(width: Dimensions.paddingSmall),
 
-          Expanded(child: Text(title, style: context.subHeading.defaultSize.regular)),
+          Expanded(child: Text(title, style: context.subHeading.defaultSize.regular.overrideWith(color: color))),
 
           isButtonActive != null ? CupertinoSwitch(
             value: isButtonActive!,

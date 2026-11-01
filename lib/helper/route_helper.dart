@@ -429,7 +429,7 @@ class RouteHelper {
     GetPage(name: onBoarding, page: () => OnBoardingScreen()),
     GetPage(name: signIn, transition: Transition.downToUp, transitionDuration: const Duration(milliseconds: 300), page: () => SignInScreen(
       exitFromApp: Get.parameters['page'] == signUp || Get.parameters['page'] == splash || Get.parameters['page'] == onBoarding,
-      backFromThis: Get.parameters['page'] != splash && Get.parameters['page'] != onBoarding,
+      backFromThis: Get.parameters['page'] != splash && Get.parameters['page'] != onBoarding && Get.parameters['page'] != signUp,
       fromResetPassword: Get.parameters['page'] == resetPassword,
     )),
     GetPage(name: signUp, transition: Transition.downToUp, transitionDuration: const Duration(milliseconds: 300), page: () => const SignUpScreen()),

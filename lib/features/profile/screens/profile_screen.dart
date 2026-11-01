@@ -212,6 +212,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             icon: Icons.delete,
                             iconImage: Images.profileDelete,
                             title: 'delete_account'.tr,
+                            color: Theme.of(context).colorScheme.error,
                             onTap: () {
                               showModalBottomSheet(
                                 isScrollControlled: true, useRootNavigator: true, context: Get.context!,

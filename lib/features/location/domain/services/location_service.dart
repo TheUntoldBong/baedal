@@ -23,7 +23,14 @@ class LocationService implements LocationServiceInterface{
   Future<Position> getPosition(LatLng? defaultLatLng, LatLng configLatLng) async {
     Position myPosition;
     try {
-      await Geolocator.requestPermission();
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+        return Position(
+          latitude: defaultLatLng != null ? defaultLatLng.latitude : configLatLng.latitude,
+          longitude: defaultLatLng != null ? defaultLatLng.longitude : configLatLng.longitude,
+          timestamp: DateTime.now(), accuracy: 1, altitude: 1, heading: 1, speed: 1, speedAccuracy: 1, altitudeAccuracy: 1, headingAccuracy: 1,
+        );
+      }
       Position newLocalData = await Geolocator.getCurrentPosition();
       myPosition = newLocalData;
     }catch(e) {
@@ -31,7 +38,6 @@ class LocationService implements LocationServiceInterface{
         latitude: defaultLatLng != null ? defaultLatLng.latitude : configLatLng.latitude,
         longitude: defaultLatLng != null ? defaultLatLng.longitude : configLatLng.longitude,
         timestamp: DateTime.now(), accuracy: 1, altitude: 1, heading: 1, speed: 1, speedAccuracy: 1, altitudeAccuracy: 1, headingAccuracy: 1,
-
       );
     }
     return myPosition;

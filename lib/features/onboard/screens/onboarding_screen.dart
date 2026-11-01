@@ -4,7 +4,6 @@ import 'package:stackfood_multivendor/features/auth/controllers/auth_controller.
 import 'package:stackfood_multivendor/features/onboard/controllers/onboard_controller.dart';
 import 'package:stackfood_multivendor/features/onboard/domain/models/onboarding_model.dart';
 import 'package:stackfood_multivendor/features/splash/controllers/splash_controller.dart';
-import 'package:stackfood_multivendor/helper/address_helper.dart';
 import 'package:stackfood_multivendor/helper/route_helper.dart';
 import 'package:stackfood_multivendor/util/app_constants.dart';
 import 'package:stackfood_multivendor/util/dimensions.dart';
@@ -34,11 +33,7 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
   void _configureToRouteInitialPage() async {
     Get.find<SplashController>().disableIntro();
     await Get.find<AuthController>().guestLogin();
-    if (AddressHelper.getAddressFromSharedPref() != null) {
-      Get.offNamed(RouteHelper.getInitialRoute(fromSplash: true));
-    } else {
-      Get.find<SplashController>().navigateToLocationScreen('splash', offNamed: true);
-    }
+    Get.offNamed(RouteHelper.getInitialRoute(fromSplash: true));
   }
 
   @override

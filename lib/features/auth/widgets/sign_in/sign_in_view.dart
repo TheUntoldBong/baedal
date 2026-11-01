@@ -16,6 +16,7 @@ import 'package:stackfood_multivendor/features/auth/widgets/social_login_widget.
 import 'package:stackfood_multivendor/features/auth/widgets/trams_conditions_check_box_widget.dart';
 import 'package:stackfood_multivendor/features/favourite/controllers/favourite_controller.dart';
 import 'package:stackfood_multivendor/features/language/controllers/localization_controller.dart';
+import 'package:stackfood_multivendor/features/profile/controllers/profile_controller.dart';
 import 'package:stackfood_multivendor/features/splash/controllers/splash_controller.dart';
 import 'package:stackfood_multivendor/features/verification/screens/verification_screen.dart';
 import 'package:stackfood_multivendor/helper/centralize_login_helper.dart';
@@ -513,17 +514,22 @@ class _SignInViewState extends State<SignInView> {
       String token = status.authResponseModel!.token ?? '';
       Get.toNamed(RouteHelper.getVerificationRoute(null, email, token, RouteHelper.signUp, data, CentralizeLoginType.manual.name));
     } else {
-      if (widget.backFromThis) {
-        if (ResponsiveHelper.isDesktop(Get.context) || widget.fromResetPassword) {
-          Get.offAllNamed(RouteHelper.getInitialRoute(fromSplash: false));
-        } else {
-          Get.back();
-          if (Get.isBottomSheetOpen ?? false) {
-            Get.back();
-          }
-        }
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+      Get.find<ProfileController>().getUserInfo();
+      bool isFromSignUpOrAuth = Get.parameters['page'] == RouteHelper.signUp ||
+          Get.parameters['page'] == RouteHelper.signIn ||
+          widget.fromResetPassword ||
+          !widget.backFromThis;
+
+      if (isFromSignUpOrAuth || ResponsiveHelper.isDesktop(Get.context)) {
+        Get.offAllNamed(RouteHelper.getInitialRoute(fromSplash: false));
       } else {
-        Get.find<SplashController>().navigateToLocationScreen('sign-in', offNamed: true);
+        Get.back();
+        if (Get.isBottomSheetOpen ?? false) {
+          Get.back();
+        }
       }
     }
   }
@@ -554,14 +560,21 @@ class _SignInViewState extends State<SignInView> {
         }
       }
     } else {
-      if (widget.backFromThis) {
-        if (ResponsiveHelper.isDesktop(Get.context)) {
-          Get.offAllNamed(RouteHelper.getInitialRoute(fromSplash: false));
-        } else {
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+      Get.find<ProfileController>().getUserInfo();
+      bool isFromSignUpOrAuth = Get.parameters['page'] == RouteHelper.signUp ||
+          Get.parameters['page'] == RouteHelper.signIn ||
+          !widget.backFromThis;
+
+      if (isFromSignUpOrAuth || ResponsiveHelper.isDesktop(Get.context)) {
+        Get.offAllNamed(RouteHelper.getInitialRoute(fromSplash: false));
+      } else {
+        Get.back();
+        if (Get.isBottomSheetOpen ?? false) {
           Get.back();
         }
-      } else {
-        Get.find<SplashController>().navigateToLocationScreen('sign-in', offNamed: true);
       }
     }
   }

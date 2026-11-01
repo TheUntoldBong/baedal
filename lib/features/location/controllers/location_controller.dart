@@ -202,7 +202,7 @@ class LocationController extends GetxController implements GetxService {
       await Get.find<FavouriteController>().getFavouriteList();
       updateZone();
     }
-    if(route == 'splash' && Get.isDialogOpen!) {
+    if(Get.isDialogOpen ?? false) {
       Get.back();
     }
     HomeScreen.loadData(true);

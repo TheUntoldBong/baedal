@@ -351,8 +351,11 @@ class SignUpWidgetState extends State<SignUpWidget> {
           null, email, status.message, RouteHelper.signUp, data, CentralizeLoginType.manual.name,
         ));
       } else {
+        if (Get.isDialogOpen ?? false) {
+          Get.back();
+        }
         Get.find<ProfileController>().getUserInfo();
-        Get.find<SplashController>().navigateToLocationScreen(RouteHelper.signUp);
+        Get.offAllNamed(RouteHelper.getInitialRoute(fromSplash: false));
       }
     } else {
       if(status.code == 'phone'){

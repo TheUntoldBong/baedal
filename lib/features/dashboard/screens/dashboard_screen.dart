@@ -31,8 +31,6 @@ import 'package:stackfood_multivendor/features/order/controllers/order_controlle
 import 'package:stackfood_multivendor/features/order/domain/models/my_order_model.dart';
 import 'package:stackfood_multivendor/features/order/screens/order_screen.dart';
 import 'package:stackfood_multivendor/features/splash/controllers/splash_controller.dart';
-import 'package:stackfood_multivendor/features/dashboard/widgets/new_user_address_bottom_sheet.dart';
-import 'package:stackfood_multivendor/helper/address_helper.dart';
 import 'package:stackfood_multivendor/helper/responsive_helper.dart';
 import 'package:stackfood_multivendor/util/dimensions.dart';
 
@@ -80,8 +78,6 @@ class DashboardScreenState extends State<DashboardScreen> {
       Get.find<OrderController>().getMyOrders(MyOrderTabType.running, 1, notify: false);
     }
 
-    _checkAndShowNewUserAddressBottomSheet();
-
     _pageIndex = widget.pageIndex;
 
     _pageController = PageController(initialPage: widget.pageIndex);
@@ -122,28 +118,6 @@ class DashboardScreenState extends State<DashboardScreen> {
           Get.find<DashboardController>().saveRegistrationSuccessfulSharedPref(false);
           Get.find<DashboardController>().saveIsRestaurantRegistrationSharedPref(false);
           setState(() {});
-        });
-      });
-    }
-  }
-
-  void _checkAndShowNewUserAddressBottomSheet() {
-    if (AddressHelper.getAddressFromSharedPref() == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        Future.delayed(const Duration(milliseconds: 600), () {
-          if (mounted && AddressHelper.getAddressFromSharedPref() == null) {
-            ResponsiveHelper.isDesktop(context)
-                ? Get.dialog(const Dialog(child: SizedBox(width: 550, child: NewUserAddressBottomSheet())))
-                : showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    isDismissible: true,
-                    backgroundColor: Colors.transparent,
-                    builder: (con) => const NewUserAddressBottomSheet(),
-                  ).then((value) {
-                    if (mounted) setState(() {});
-                  });
-          }
         });
       });
     }
