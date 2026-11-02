@@ -15,7 +15,7 @@ class WhatOnYourMindViewWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetBuilder<HomeController>(builder: (homeController) {
-      final bool hasItems = homeController.categoryCuisineList?.isNotEmpty ?? false;
+      final bool hasItems = (homeController.categoryCuisineList ?? []).any((item) => item.isCuisine);
       final bool isDesktop = ResponsiveHelper.isDesktop(context);
       final double topPadding = merged && !isDesktop
           ? Dimensions.paddingSmall

@@ -1,6 +1,7 @@
 import 'package:stackfood_multivendor/features/product/domain/models/basic_campaign_model.dart';
 import 'package:stackfood_multivendor/common/models/product_model.dart';
 import 'package:stackfood_multivendor/common/models/restaurant_model.dart';
+import 'package:stackfood_multivendor/features/category/domain/models/category_model.dart';
 
 class BannerModel {
   List<BasicCampaignModel>? campaigns;
@@ -42,6 +43,7 @@ class Banner {
   String? imageFullUrl;
   Restaurant? restaurant;
   Product? food;
+  CategoryModel? category;
 
   Banner({
     this.id,
@@ -50,6 +52,7 @@ class Banner {
     this.imageFullUrl,
     this.restaurant,
     this.food,
+    this.category,
   });
 
   Banner.fromJson(Map<String, dynamic> json) {
@@ -59,6 +62,7 @@ class Banner {
     imageFullUrl = json['image_full_url'];
     restaurant = json['restaurant'] != null ? Restaurant.fromJson(json['restaurant']) : null;
     food = json['food'] != null ? Product.fromJson(json['food']) : null;
+    category = json['category'] != null ? CategoryModel.fromJson(json['category']) : null;
   }
 
   Map<String, dynamic> toJson() {
@@ -72,6 +76,9 @@ class Banner {
     }
     if (food != null) {
       data['food'] = food!.toJson();
+    }
+    if (category != null) {
+      data['category'] = category!.toJson();
     }
     return data;
   }

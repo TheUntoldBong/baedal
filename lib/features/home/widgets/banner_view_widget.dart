@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:shimmer_animation/shimmer_animation.dart';
 import 'package:stackfood_multivendor/common/models/product_model.dart';
 import 'package:stackfood_multivendor/common/models/restaurant_model.dart';
+import 'package:stackfood_multivendor/features/category/domain/models/category_model.dart';
 import 'package:stackfood_multivendor/common/widgets/custom_image_widget.dart';
 import 'package:stackfood_multivendor/features/home/controllers/home_controller.dart';
 import 'package:stackfood_multivendor/features/product/domain/models/basic_campaign_model.dart';
@@ -71,6 +72,9 @@ class BannerViewWidget extends StatelessWidget {
                     }else if(homeController.bannerDataList![index] is BasicCampaignModel) {
                       BasicCampaignModel campaign = homeController.bannerDataList![index];
                       Get.toNamed(RouteHelper.getBasicCampaignRoute(campaign));
+                    }else if(homeController.bannerDataList![index] is CategoryModel) {
+                      CategoryModel category = homeController.bannerDataList![index];
+                      Get.toNamed(RouteHelper.getCategoryProductRoute(category.id, category.name ?? ''));
                     }
                   },
                   child: Container(

@@ -48,7 +48,7 @@ class HomeController extends GetxController implements GetxService {
     }
     _exploreCategoryCuisineModel = null;
     _exploreCategoryCuisineModel = await homeServiceInterface.getCategoryCuisineList(
-      source: DataSourceEnum.client, limit: _exploreCategoryCuisineLimit, offset: 1,
+      source: DataSourceEnum.client, limit: _exploreCategoryCuisineLimit, offset: 1, type: 'cuisine',
     );
     update();
   }
@@ -68,7 +68,7 @@ class HomeController extends GetxController implements GetxService {
     update();
 
     CategoryCuisineModel? nextPage = await homeServiceInterface.getCategoryCuisineList(
-      source: DataSourceEnum.client, limit: limit, offset: nextOffset,
+      source: DataSourceEnum.client, limit: limit, offset: nextOffset, type: 'cuisine',
     );
     if(nextPage != null) {
       _exploreCategoryCuisineModel!.data!.addAll(nextPage.data ?? []);
@@ -85,11 +85,11 @@ class HomeController extends GetxController implements GetxService {
         _categoryCuisineModel = null;
       }
       if(dataSource == DataSourceEnum.local) {
-        _categoryCuisineModel = await homeServiceInterface.getCategoryCuisineList(source: DataSourceEnum.local);
+        _categoryCuisineModel = await homeServiceInterface.getCategoryCuisineList(source: DataSourceEnum.local, type: 'cuisine');
         update();
         getCategoryCuisineList(false, dataSource: DataSourceEnum.client, fromRecall: true);
       } else {
-        _categoryCuisineModel = await homeServiceInterface.getCategoryCuisineList(source: DataSourceEnum.client);
+        _categoryCuisineModel = await homeServiceInterface.getCategoryCuisineList(source: DataSourceEnum.client, type: 'cuisine');
         update();
       }
     }
@@ -128,8 +128,12 @@ class HomeController extends GetxController implements GetxService {
         }
         if(banner.food != null) {
           _bannerDataList!.add(banner.food);
-        }else {
+        }else if(banner.restaurant != null) {
           _bannerDataList!.add(banner.restaurant);
+        }else if(banner.category != null) {
+          _bannerDataList!.add(banner.category);
+        }else {
+          _bannerDataList!.add(null);
         }
       }
     }

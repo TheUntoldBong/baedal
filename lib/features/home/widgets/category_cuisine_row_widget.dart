@@ -20,7 +20,9 @@ class CategoryCuisineRowWidget extends StatelessWidget {
 
     return GetBuilder<HomeController>(builder: (homeController) {
 
-      final List<CategoryCuisineItem> items = homeController.categoryCuisineList ?? [];
+      final List<CategoryCuisineItem> items = (homeController.categoryCuisineList ?? [])
+          .where((item) => item.isCuisine)
+          .toList();
 
       return SizedBox(
         height: 105,
@@ -73,7 +75,7 @@ class CategoryCuisineRowWidget extends StatelessWidget {
           borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
         ),
         child: CustomInkWellWidget(
-          onTap: () => Get.toNamed(RouteHelper.getCategoryCuisineRoute()),
+          onTap: () => Get.toNamed(RouteHelper.getCuisineRoute()),
           radius: Dimensions.radiusSmall,
           child: Column(
             mainAxisSize: MainAxisSize.min,
