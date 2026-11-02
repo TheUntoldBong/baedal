@@ -6,7 +6,9 @@ import 'package:stackfood_multivendor/common/widgets/custom_image_widget.dart';
 import 'package:stackfood_multivendor/common/widgets/custom_snackbar_widget.dart';
 import 'package:stackfood_multivendor/common/widgets/footer_view_widget.dart';
 import 'package:stackfood_multivendor/features/auth/controllers/auth_controller.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stackfood_multivendor/features/checkout/widgets/celebration_particles.dart';
+import 'package:stackfood_multivendor/features/checkout/widgets/order_review_dialog_widget.dart';
 import 'package:stackfood_multivendor/features/checkout/widgets/payment_failed_dialog.dart';
 import 'package:stackfood_multivendor/features/order/controllers/order_controller.dart';
 import 'package:stackfood_multivendor/features/splash/controllers/splash_controller.dart';
@@ -45,6 +47,7 @@ class _OrderSuccessfulScreenState extends State<OrderSuccessfulScreen> with Tick
   String? orderId;
   final ScrollController scrollController = ScrollController();
   bool _isCopied = false;
+  bool _hasPromptedReview = false;
 
   late AnimationController _celebrationController;
   late AnimationController _pulseController;
@@ -61,6 +64,12 @@ class _OrderSuccessfulScreenState extends State<OrderSuccessfulScreen> with Tick
       orderId = parts[0].trim();
     }
     Get.find<OrderController>().trackOrder(orderId.toString(), null, false, contactNumber: widget.contactPersonNumber);
+
+    SharedPreferences.getInstance().then((prefs) {
+      if (prefs.getBool('order_reviewed_$orderId') == true) {
+        _hasPromptedReview = true;
+      }
+    });
 
     // Setup celebration animations
     _celebrationController = AnimationController(
@@ -130,6 +139,16 @@ class _OrderSuccessfulScreenState extends State<OrderSuccessfulScreen> with Tick
                 ),
                 barrierDismissible: false,
               );
+            });
+          } else if (success && !_hasPromptedReview && Get.currentRoute.startsWith(RouteHelper.orderSuccess)) {
+            _hasPromptedReview = true;
+            Future.delayed(const Duration(milliseconds: 2200), () {
+              if (mounted && !Get.isDialogOpen! && Get.currentRoute.startsWith(RouteHelper.orderSuccess)) {
+                Get.dialog(
+                  OrderReviewDialogWidget(orderID: orderId),
+                  barrierDismissible: true,
+                );
+              }
             });
           }
         }

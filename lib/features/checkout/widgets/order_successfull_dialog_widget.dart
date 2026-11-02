@@ -1,8 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stackfood_multivendor/common/widgets/custom_snackbar_widget.dart';
 import 'package:stackfood_multivendor/features/auth/controllers/auth_controller.dart';
+import 'package:stackfood_multivendor/features/checkout/widgets/order_review_dialog_widget.dart';
 import 'package:stackfood_multivendor/features/checkout/widgets/payment_failed_dialog.dart';
 import 'package:stackfood_multivendor/features/order/controllers/order_controller.dart';
 import 'package:stackfood_multivendor/features/splash/controllers/splash_controller.dart';
@@ -33,6 +35,7 @@ class OrderSuccessfulDialogWidget extends StatefulWidget {
 
 class _OrderSuccessfulDialogWidgetState extends State<OrderSuccessfulDialogWidget> with TickerProviderStateMixin {
   bool _isCopied = false;
+  bool _hasPromptedReview = false;
   late AnimationController _animController;
   late AnimationController _pulseController;
   late Animation<double> _scaleAnimation;
@@ -41,6 +44,12 @@ class _OrderSuccessfulDialogWidgetState extends State<OrderSuccessfulDialogWidge
   void initState() {
     super.initState();
     Get.find<OrderController>().trackOrder(widget.orderID.toString(), null, false, contactNumber: widget.contactNumber);
+
+    SharedPreferences.getInstance().then((prefs) {
+      if (widget.orderID != null && prefs.getBool('order_reviewed_${widget.orderID}') == true) {
+        _hasPromptedReview = true;
+      }
+    });
 
     _animController = AnimationController(
       vsync: this,
@@ -105,6 +114,16 @@ class _OrderSuccessfulDialogWidgetState extends State<OrderSuccessfulDialogWidge
                 ),
                 barrierDismissible: false,
               );
+            });
+          } else if (success && !_hasPromptedReview) {
+            _hasPromptedReview = true;
+            Future.delayed(const Duration(milliseconds: 2500), () {
+              if (mounted) {
+                Get.dialog(
+                  OrderReviewDialogWidget(orderID: widget.orderID),
+                  barrierDismissible: true,
+                );
+              }
             });
           }
         }
