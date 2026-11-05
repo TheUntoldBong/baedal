@@ -1,8 +1,9 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:stackfood_multivendor/api/api_client.dart';
 import 'package:stackfood_multivendor/common/widgets/custom_snackbar_widget.dart';
+import 'package:stackfood_multivendor/features/checkout/widgets/payment_failed_dialog.dart';
 import 'package:stackfood_multivendor/features/loyalty/controllers/loyalty_controller.dart';
 import 'package:stackfood_multivendor/features/splash/controllers/splash_controller.dart';
 import 'package:stackfood_multivendor/helper/route_helper.dart';
@@ -13,8 +14,11 @@ class RazorpayHelper {
   static String? _orderId;
   static double? _amount;
   static String? _contactNumber;
+  static String? _email;
+  static String? _customerName;
   static bool _isDeliveryOrder = true;
   static double _proDiscount = 0;
+  static double? _maxCodOrderAmount;
 
   static void init() {
     _razorpay ??= Razorpay();
@@ -37,14 +41,18 @@ class RazorpayHelper {
     required String customerName,
     bool isDeliveryOrder = true,
     double proDiscount = 0,
+    double? maxCodOrderAmount,
   }) {
     init();
 
     _orderId = orderId;
     _amount = amount;
     _contactNumber = contactNumber;
+    _email = email;
+    _customerName = customerName;
     _isDeliveryOrder = isDeliveryOrder;
     _proDiscount = proDiscount;
+    _maxCodOrderAmount = maxCodOrderAmount;
 
     String? key;
     var activeList = Get.find<SplashController>().configModel?.activePaymentMethodList;
@@ -112,13 +120,23 @@ class RazorpayHelper {
 
     try {
       if (_orderId != null && response.paymentId != null) {
-        await Get.find<ApiClient>().postData(AppConstants.razorpayVerifyUri, {
+        final verification = await Get.find<ApiClient>().postData(AppConstants.razorpayVerifyUri, {
           'order_id': _orderId,
           'payment_id': response.paymentId,
         });
+        if (verification.statusCode != 200) {
+          debugPrint('Razorpay verification rejected: ${verification.statusCode} - ${verification.statusText}');
+          showCustomSnackBar('Payment was received but could not be verified. Please contact support before trying again.');
+          return;
+        }
+      } else {
+        showCustomSnackBar('Payment could not be verified. Please contact support before trying again.');
+        return;
       }
     } catch (e) {
       debugPrint('Error verifying razorpay payment: $e');
+      showCustomSnackBar('Payment was received but could not be verified. Please contact support before trying again.');
+      return;
     }
 
     if (_amount != null && Get.find<SplashController>().configModel?.loyaltyPointItemPurchasePoint != null) {
@@ -136,7 +154,34 @@ class RazorpayHelper {
 
   static void _handlePaymentError(PaymentFailureResponse response) {
     debugPrint('Razorpay Payment Failure: ${response.code} - ${response.message}');
-    showCustomSnackBar('Payment cancelled or failed. You can switch to COD or try again.');
+    if (_orderId != null && Get.context != null) {
+      Get.dialog(
+        Dialog(
+          backgroundColor: Colors.transparent,
+          child: PaymentFailedDialog(
+            orderID: _orderId,
+            orderAmount: _amount,
+            maxCodOrderAmount: _maxCodOrderAmount,
+            contactPersonNumber: _contactNumber,
+            onRetry: () {
+              openCheckout(
+                orderId: _orderId!,
+                amount: _amount ?? 0,
+                contactNumber: _contactNumber ?? '',
+                email: _email ?? '',
+                customerName: _customerName ?? '',
+                isDeliveryOrder: _isDeliveryOrder,
+                proDiscount: _proDiscount,
+                maxCodOrderAmount: _maxCodOrderAmount,
+              );
+            },
+          ),
+        ),
+        barrierDismissible: false,
+      );
+    } else {
+      showCustomSnackBar('Payment cancelled or failed. You can switch to COD or try again.');
+    }
   }
 
   static void _handleExternalWallet(ExternalWalletResponse response) {

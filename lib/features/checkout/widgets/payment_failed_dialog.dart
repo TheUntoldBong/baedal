@@ -19,7 +19,8 @@ class PaymentFailedDialog extends StatelessWidget {
   final double? orderAmount;
   final double? maxCodOrderAmount;
   final String? contactPersonNumber;
-  const PaymentFailedDialog({super.key, required this.orderID, required this.maxCodOrderAmount, required this.orderAmount, this.contactPersonNumber});
+  final VoidCallback? onRetry;
+  const PaymentFailedDialog({super.key, required this.orderID, required this.maxCodOrderAmount, required this.orderAmount, this.contactPersonNumber, this.onRetry});
 
   @override
   Widget build(BuildContext context) {
@@ -52,8 +53,22 @@ class PaymentFailedDialog extends StatelessWidget {
 
           GetBuilder<OrderController>(builder: (orderController) {
             return !orderController.isLoading ? Column(children: [
+              if (onRetry != null) ...[
+                CustomButtonWidget(
+                  buttonText: 'retry_payment'.tr.isNotEmpty && 'retry_payment'.tr != 'retry_payment' ? 'retry_payment'.tr : 'Retry Online Payment',
+                  onPressed: () {
+                    if (Get.isDialogOpen ?? false) {
+                      Get.back();
+                    }
+                    onRetry!();
+                  },
+                  radius: Dimensions.radiusExtraSmall, height: 40,
+                ),
+                const SizedBox(height: Dimensions.paddingDefault),
+              ],
               Get.find<SplashController>().configModel!.cashOnDelivery! ? CustomButtonWidget(
                 buttonText: 'switch_to_cash_on_delivery'.tr,
+                transparent: onRetry != null,
                 onPressed: () {
                   if(maxCodOrderAmount == null || orderAmount! < maxCodOrderAmount!){
                     double total = ((orderAmount! / 100) * Get.find<SplashController>().configModel!.loyaltyPointItemPurchasePoint!);

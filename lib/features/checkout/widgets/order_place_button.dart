@@ -426,7 +426,9 @@ class OrderPlaceButton extends StatelessWidget {
           : !checkoutController.restaurant!.scheduleOrder! ? null : (checkoutController.selectedDateSlot == 0
           && checkoutController.selectedTimeSlot == 0) ? null : DateConverter.dateToDateAndTime(scheduleStartDate),
       orderAmount: total, orderNote: checkoutController.noteController.text, orderType: checkoutController.orderType,
-      paymentMethod: checkoutController.paymentMethodIndex == 0 ? 'cash_on_delivery'
+      paymentMethod: (checkoutController.isPartialPay && checkoutController.paymentMethodIndex == 1)
+          ? 'digital_payment'
+          : checkoutController.paymentMethodIndex == 0 ? 'cash_on_delivery'
           : checkoutController.paymentMethodIndex == 1 ? 'wallet'
           : checkoutController.paymentMethodIndex == 2 ? 'digital_payment' : 'offline_payment',
       couponCode: (Get.find<CouponController>().discount! > 0 || (Get.find<CouponController>().coupon != null

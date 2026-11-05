@@ -13,7 +13,7 @@ class AppConstants {
   static const bool payInWevView = true;
   static const String webHostedUrl = 'https://baedalfooddelivery.com';
   static const String googleServerClientId = '369896627923-pvmv91i1kmnnk87v3hdqajafaccil2md.apps.googleusercontent.com';
-  static const String razorpayKey = 'rzp_live_TqciW8mYeWV0Br';
+  static const String razorpayKey = 'rzp_live_TwCYmWFJc3dZQs';
 
   static const String baseUrl = 'https://manage.baedalfooddelivery.com';
   static const String categoryUri = '/api/v1/categories';

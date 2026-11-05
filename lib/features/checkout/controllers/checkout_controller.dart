@@ -8,7 +8,6 @@ import 'package:stackfood_multivendor/common/widgets/custom_bottom_sheet_widget.
 import 'package:stackfood_multivendor/common/widgets/custom_snackbar_widget.dart';
 import 'package:stackfood_multivendor/features/home/screens/home_screen.dart';
 import 'package:stackfood_multivendor/features/location/domain/models/zone_response_model.dart';
-import 'package:stackfood_multivendor/features/order/domain/models/order_model.dart';
 import 'package:stackfood_multivendor/features/address/domain/models/address_model.dart';
 import 'package:stackfood_multivendor/features/auth/controllers/auth_controller.dart';
 import 'package:stackfood_multivendor/features/cart/controllers/cart_controller.dart';
@@ -33,6 +32,7 @@ import 'package:stackfood_multivendor/helper/address_helper.dart';
 import 'package:stackfood_multivendor/helper/date_converter.dart';
 import 'package:stackfood_multivendor/helper/responsive_helper.dart';
 import 'package:stackfood_multivendor/helper/route_helper.dart';
+import 'package:stackfood_multivendor/helper/razorpay_helper.dart';
 import 'package:stackfood_multivendor/helper/splash_route_helper.dart';
 import 'package:stackfood_multivendor/util/app_constants.dart';
 import 'package:flutter/foundation.dart';
@@ -995,7 +995,8 @@ class CheckoutController extends GetxController implements GetxService {
       orderID = response.body['order_id'].toString();
       noteController.clear();
 
-      if(paymentMethodIndex == 0 || paymentMethodIndex == 1) {
+      bool isSettledImmediately = ((paymentMethodIndex == 0 || paymentMethodIndex == 1) && !isPartialPay) || (paymentMethodIndex == 0 && isPartialPay);
+      if(isSettledImmediately) {
         Response notificationResponse = await checkoutServiceInterface.sendNotificationRequest(orderID, Get.find<AuthController>().isLoggedIn() ? null : Get.find<AuthController>().getGuestId());
         bool reloadHome = notificationResponse.body != null && notificationResponse.body['reload_home'] == true;
 
@@ -1039,7 +1040,10 @@ class CheckoutController extends GetxController implements GetxService {
       }
       setGuestAddress(null);
       stopLoader();
-      if(paymentMethodIndex == 0 || paymentMethodIndex == 1) {
+      bool isFullPaidByCashOrWallet = (paymentMethodIndex == 0 || paymentMethodIndex == 1) && !isPartialPay;
+      bool isPartialPaidWithCod = paymentMethodIndex == 0 && isPartialPay;
+
+      if(isFullPaidByCashOrWallet || isPartialPaidWithCod) {
         double total = ((amount / 100) * Get.find<SplashController>().configModel!.loyaltyPointItemPurchasePoint!);
         Get.find<LoyaltyController>().saveEarningPoint(total.toStringAsFixed(0));
         if(isDineInOrder) {
@@ -1052,18 +1056,31 @@ class CheckoutController extends GetxController implements GetxService {
         }
 
       }else {
+        double payableOnlineAmount = isPartialPay
+            ? (amount - (Get.find<ProfileController>().userInfoModel?.walletBalance ?? 0))
+            : amount;
+        if (payableOnlineAmount < 0) payableOnlineAmount = 0;
+
         if(GetPlatform.isWeb) {
           await Get.find<AuthController>().saveGuestNumber(contactNumber ?? '');
           String? hostname = html.window.location.hostname;
           String protocol = html.window.location.protocol;
           String selectedUrl = '${AppConstants.baseUrl}/payment-mobile?order_id=$orderID&customer_id=${Get.find<ProfileController>().userInfoModel?.id ?? Get.find<AuthController>().getGuestId()}'
-              '&payment_method=$digitalPaymentName&payment_platform=web&&callback=$protocol//$hostname${RouteHelper.orderSuccess}?id=$orderID&amount=$amount&pro_discount=$proDiscount&status=';
+              '&payment_method=$digitalPaymentName&payment_platform=web&&callback=$protocol//$hostname${RouteHelper.orderSuccess}?id=$orderID&amount=$payableOnlineAmount&pro_discount=$proDiscount&status=';
           html.window.open(selectedUrl,"_self");
         } else {
-          Get.offNamed(RouteHelper.getPaymentRoute(
-            OrderModel(id: int.parse(orderID), userId: Get.find<ProfileController>().userInfoModel?.id ?? 0, orderAmount: amount, restaurant: Get.find<RestaurantController>().restaurant),
-            digitalPaymentName ?? 'razor_pay', guestId: Get.find<AuthController>().getGuestId(), contactNumber: contactNumber,
-          ));
+          String customerName = '${Get.find<ProfileController>().userInfoModel?.fName ?? ''} ${Get.find<ProfileController>().userInfoModel?.lName ?? ''}'.trim();
+          String email = Get.find<ProfileController>().userInfoModel?.email ?? '';
+          RazorpayHelper.openCheckout(
+            orderId: orderID,
+            amount: payableOnlineAmount,
+            contactNumber: contactNumber ?? Get.find<ProfileController>().userInfoModel?.phone ?? '',
+            email: email,
+            customerName: customerName,
+            isDeliveryOrder: isDeliveryOrder,
+            proDiscount: proDiscount,
+            maxCodOrderAmount: maximumCodOrderAmount,
+          );
         }
       }
       clearPrevData();

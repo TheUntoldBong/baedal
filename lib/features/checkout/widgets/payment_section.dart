@@ -97,10 +97,17 @@ class PaymentSection extends StatelessWidget {
                     } else if (partialPaymentStatus && walletBalance > 0) {
                       // Toggle partial payment with wallet
                       checkoutController.changePartialPayment();
-                      if (checkoutController.paymentMethodIndex == 1 || checkoutController.paymentMethodIndex == -1) {
-                        // Default remainder to online payment
-                        checkoutController.setPaymentMethod(2);
-                        checkoutController.changeDigitalPaymentName('razor_pay');
+                      if (checkoutController.isPartialPay) {
+                        if (checkoutController.paymentMethodIndex == 1 || checkoutController.paymentMethodIndex == -1) {
+                          // Default remainder to online payment
+                          checkoutController.setPaymentMethod(2);
+                          checkoutController.changeDigitalPaymentName('razor_pay');
+                        }
+                      } else {
+                        if (checkoutController.paymentMethodIndex == 1) {
+                          checkoutController.setPaymentMethod(2);
+                          checkoutController.changeDigitalPaymentName('razor_pay');
+                        }
                       }
                     } else {
                       showCustomSnackBar(
