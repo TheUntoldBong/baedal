@@ -128,15 +128,15 @@ class _NewUserSetupScreenState extends State<NewUserSetupScreen> {
                   validator: (value) => ValidateCheck.validateEmptyText(value, "please_enter_phone_number".tr),
                 ) : CustomTextFieldWidget(
                   hintText: 'enter_email'.tr,
-                  labelText: 'email'.tr,
+                  labelText: '${'email'.tr} (${'optional'.tr})',
                   showLabelText: true,
-                  required: true,
+                  required: false,
                   controller: _emailController,
                   focusNode: _emailFocus,
                   nextFocus: _referCodeFocus,
                   inputType: TextInputType.emailAddress,
                   prefixIcon: CupertinoIcons.mail_solid,
-                  validator: (value) => ValidateCheck.validateEmail(value),
+                  validator: (value) => (value != null && value.isNotEmpty) ? (!GetUtils.isEmail(value) ? 'enter_valid_email_address'.tr : null) : null,
                 ),
                 const SizedBox(height: Dimensions.paddingExtraLarge),
 
@@ -181,9 +181,10 @@ class _NewUserSetupScreenState extends State<NewUserSetupScreen> {
                       } else if(referCode.isNotEmpty && referCode.length != 10){
                         showCustomSnackBar('invalid_refer_code'.tr);
                       }else if(_formKeyInfo!.currentState!.validate()) {
+                        String emailVal = _emailController.text.trim();
                         authController.updatePersonalInfo(
                           name: name.isNotEmpty ? name : widget.name, phone: (widget.phone != null && widget.phone!.isNotEmpty) ?  widget.phone : _countryDialCode! + _phoneController.text.trim(),
-                          loginType: widget.loginType, email: widget.email ?? _emailController.text.trim(),
+                          loginType: widget.loginType, email: widget.email ?? (emailVal.isNotEmpty ? emailVal : null),
                           referCode: _referCodeController.text.trim(),
                         ).then((response) {
                           if(response.isSuccess) {

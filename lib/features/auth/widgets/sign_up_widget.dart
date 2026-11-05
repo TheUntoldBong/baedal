@@ -163,17 +163,17 @@ class SignUpWidgetState extends State<SignUpWidget> {
                         SizedBox(height: Dimensions.paddingLarge),
 
                         CustomTextFieldWithTitle(
-                          titleText: 'email'.tr,
+                          titleText: '${'email'.tr} (${'optional'.tr})',
                           hintText: 'olivia@untitledui.com'.tr,
                           showTitle: true,
                           showLabelText: false,
-                          required: true,
+                          required: false,
                           controller: _emailController,
                           focusNode: _emailFocus,
                           nextFocus: _passwordFocus,
                           inputType: TextInputType.emailAddress,
                           prefixIcon: CupertinoIcons.mail_solid,
-                          validator: (value) => ValidateCheck.validateEmail(value),
+                          validator: (value) => (value != null && value.isNotEmpty) ? (!GetUtils.isEmail(value) ? 'enter_valid_email_address'.tr : null) : null,
                         ),
                         SizedBox(height: Dimensions.paddingLarge),
 
@@ -308,7 +308,6 @@ class SignUpWidgetState extends State<SignUpWidget> {
   bool _isFormValid() {
     return _nameController.text.trim().isNotEmpty &&
         _phoneController.text.trim().isNotEmpty &&
-        _emailController.text.trim().isNotEmpty &&
         _passwordController.text.trim().isNotEmpty &&
         _confirmPasswordController.text.trim().isNotEmpty;
   }
@@ -344,7 +343,7 @@ class SignUpWidgetState extends State<SignUpWidget> {
             numberWithCountryCode, null, status.message, RouteHelper.signUp, data, CentralizeLoginType.manual.name,
           ));
         }
-      } else if(status.authResponseModel != null && !status.authResponseModel!.isEmailVerified!) {
+      } else if(status.authResponseModel != null && !status.authResponseModel!.isEmailVerified! && email.isNotEmpty) {
         List<int> encoded = utf8.encode(password);
         String data = base64Encode(encoded);
         Get.toNamed(RouteHelper.getVerificationRoute(
@@ -385,9 +384,7 @@ class SignUpWidgetState extends State<SignUpWidget> {
     if (_formKeySignUp!.currentState!.validate()) {
       if (name.isEmpty) {
         showCustomSnackBar('please_enter_your_name'.tr);
-      } else if (email.isEmpty) {
-        showCustomSnackBar('enter_email_address'.tr);
-      } else if (!GetUtils.isEmail(email)) {
+      } else if (email.isNotEmpty && !GetUtils.isEmail(email)) {
         showCustomSnackBar('enter_a_valid_email_address'.tr);
       } else if (number.isEmpty) {
         showCustomSnackBar('enter_phone_number'.tr);
