@@ -33,7 +33,7 @@ class RazorpayHelper {
     _razorpay = null;
   }
 
-  static void openCheckout({
+  static Future<void> openCheckout({
     required String orderId,
     required double amount,
     required String contactNumber,
@@ -42,7 +42,7 @@ class RazorpayHelper {
     bool isDeliveryOrder = true,
     double proDiscount = 0,
     double? maxCodOrderAmount,
-  }) {
+  }) async {
     init();
 
     _orderId = orderId;
@@ -54,13 +54,49 @@ class RazorpayHelper {
     _proDiscount = proDiscount;
     _maxCodOrderAmount = maxCodOrderAmount;
 
+    // Show loading spinner while preparing Razorpay order
+    Get.dialog(
+      const Center(child: CircularProgressIndicator()),
+      barrierDismissible: false,
+    );
+
+    String? razorpayOrderId;
     String? key;
-    var activeList = Get.find<SplashController>().configModel?.activePaymentMethodList;
-    if (activeList != null) {
-      for (var method in activeList) {
-        if ((method.getWay == 'razor_pay' || method.getWay == 'razorpay') && method.publicKey != null && method.publicKey!.isNotEmpty) {
-          key = method.publicKey;
-          break;
+    double finalAmount = amount;
+
+    try {
+      final response = await Get.find<ApiClient>().postData(AppConstants.razorpayCreateOrderUri, {
+        'order_id': orderId,
+      });
+
+      if (Get.isDialogOpen == true) {
+        Get.back();
+      }
+
+      if (response.statusCode == 200 && response.body != null && response.body['status'] == true) {
+        razorpayOrderId = response.body['razorpay_order_id'];
+        key = response.body['api_key'];
+        if (response.body['amount'] != null) {
+          finalAmount = double.tryParse('${response.body['amount']}') ?? amount;
+        }
+      } else {
+        debugPrint('Failed to create Razorpay server order: ${response.statusCode} - ${response.statusText}');
+      }
+    } catch (e) {
+      if (Get.isDialogOpen == true) {
+        Get.back();
+      }
+      debugPrint('Exception while creating Razorpay order: $e');
+    }
+
+    if (key == null || key.isEmpty) {
+      var activeList = Get.find<SplashController>().configModel?.activePaymentMethodList;
+      if (activeList != null) {
+        for (var method in activeList) {
+          if ((method.getWay == 'razor_pay' || method.getWay == 'razorpay') && method.publicKey != null && method.publicKey!.isNotEmpty) {
+            key = method.publicKey;
+            break;
+          }
         }
       }
     }
@@ -84,9 +120,9 @@ class RazorpayHelper {
       prefill['name'] = customerName.trim();
     }
 
-    var options = {
+    var options = <String, dynamic>{
       'key': key,
-      'amount': (amount * 100).round(),
+      'amount': (finalAmount * 100).round(),
       'currency': 'INR',
       'name': Get.find<SplashController>().configModel?.businessName ?? AppConstants.appName,
       'description': 'Order #$orderId',
@@ -94,9 +130,6 @@ class RazorpayHelper {
       'prefill': prefill,
       'theme': {
         'color': '#20A7DB',
-      },
-      'notes': {
-        'order_id': orderId,
       },
       'retry': {
         'enabled': true,
@@ -107,11 +140,16 @@ class RazorpayHelper {
       }
     };
 
+    if (razorpayOrderId != null && razorpayOrderId.isNotEmpty) {
+      options['order_id'] = razorpayOrderId;
+    }
+
     try {
       _razorpay?.open(options);
     } catch (e) {
       debugPrint('Razorpay open error: $e');
       showCustomSnackBar('Could not launch Razorpay: $e');
+      _handlePaymentError(PaymentFailureResponse(3, e.toString(), null));
     }
   }
 
