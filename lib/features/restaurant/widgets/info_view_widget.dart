@@ -110,9 +110,13 @@ class InfoViewWidget extends StatelessWidget {
 
           AppConstants.webHostedUrl.isNotEmpty ? InkWell(
             onTap: (){
-              String shareUrl = '${AppConstants.webHostedUrl}${restController.filteringUrl(restaurant.slug ?? '')}';
+              final String restName = restaurant.name ?? 'Restaurant';
+              final String shareUrl = '${AppConstants.webHostedUrl}/share?type=restaurant&id=${restaurant.id}'
+                  '&slug=${Uri.encodeComponent(restaurant.slug ?? '')}'
+                  '&name=${Uri.encodeComponent(restName)}'
+                  '${restaurant.logoFullUrl != null ? '&image=${Uri.encodeComponent(restaurant.logoFullUrl!)}' : ''}';
               SharePlus.instance.share(
-                ShareParams(text: shareUrl),
+                ShareParams(text: 'Check out "$restName" on Baedal Food Delivery! Order now:\n$shareUrl'),
               );
             },
             child: Icon(

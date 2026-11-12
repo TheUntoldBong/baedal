@@ -32,32 +32,26 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>com.googleusercontent.apps.369896627923-rqjhsuh7vihe1csnhuat6v04nborpeo5</string>
-				<string>fb452131619626499</string>
+				<string>baedalfooddelivery</string>
 			</array>
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
-	<key>FacebookAppID</key>
-	<string>452131619626499</string>
-	<key>FacebookClientToken</key>
-	<string>CLIENT-TOKEN</string>
-	<key>FacebookDisplayName</key>
-	<string>Baedal</string>
 	<key>FirebaseAppDelegateProxyEnabled</key>
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>This app requires access to the camera to upload customer profile picture.</string>
+	<string>Baedal requires camera access to take photos for your profile, customer support chat, and food reviews.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>This app needs access to location to manage coverage of restaurant and when add a new address.</string>
+	<string>Baedal requires your location to display nearby restaurants and deliver food orders accurately to your address.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>This app needs access to location to show nearby restaurants and deliver your food orders accurately.</string>
+	<string>Baedal requires your location to provide real-time order tracking and accurate food delivery.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>This app requires access to the microphone to search for food and restaurants using your voice.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>This app requires access to the gallery to upload customer profile picture.</string>
+	<string>Baedal requires photo library access to upload your profile picture, attach images in customer support chat, and add photos to food reviews.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>NSSpeechRecognitionUsageDescription</key>
@@ -95,27 +89,31 @@
 		<string>gpay</string>
 		<string>paytmmp</string>
 		<string>bhim</string>
+		<string>credpay</string>
+		<string>cred</string>
+		<string>whatsapp</string>
+		<string>mobikwik</string>
 	</array>
 	<key>UIApplicationSceneManifest</key>
-        <dict>
-            <key>UIApplicationSupportsMultipleScenes</key>
-            <false/>
-            <key>UISceneConfigurations</key>
-            <dict>
-                <key>UIWindowSceneSessionRoleApplication</key>
-                <array>
-                    <dict>
-                        <key>UISceneClassName</key>
-                        <string>UIWindowScene</string>
-                        <key>UISceneDelegateClassName</key>
-                        <string>FlutterSceneDelegate</string>
-                        <key>UISceneConfigurationName</key>
-                        <string>flutter</string>
-                        <key>UISceneStoryboardFile</key>
-                        <string>Main</string>
-                    </dict>
-                </array>
-            </dict>
-        </dict>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneClassName</key>
+					<string>UIWindowScene</string>
+					<key>UISceneDelegateClassName</key>
+					<string>FlutterSceneDelegate</string>
+					<key>UISceneConfigurationName</key>
+					<string>flutter</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
 </dict>
 </plist>

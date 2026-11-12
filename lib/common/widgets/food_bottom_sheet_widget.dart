@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:just_the_tooltip/just_the_tooltip.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:stackfood_multivendor/util/app_constants.dart';
 import 'package:stackfood_multivendor/common/widgets/custom_bottom_sheet_widget.dart';
 import 'package:stackfood_multivendor/common/widgets/custom_favourite_widget.dart';
 import 'package:stackfood_multivendor/common/widgets/custom_snackbar_widget.dart';
@@ -81,6 +83,21 @@ class _FoodBottomSheetWidgetState extends State<FoodBottomSheetWidget> {
     _descriptionCollapsed.dispose();
     _sheetController.dispose();
     super.dispose();
+  }
+
+  void _shareProduct() {
+    if (product == null || AppConstants.webHostedUrl.isEmpty) return;
+    final String productName = product?.name ?? 'Delicious Food';
+    final String restaurantName = product?.restaurantName ?? '';
+    final String shareUrl = '${AppConstants.webHostedUrl}/share?type=item&id=${product?.id}'
+        '&name=${Uri.encodeComponent(productName)}'
+        '${restaurantName.isNotEmpty ? '&restaurant=${Uri.encodeComponent(restaurantName)}' : ''}'
+        '${product?.price != null ? '&price=${product!.price}' : ''}'
+        '${product?.imageFullUrl != null ? '&image=${Uri.encodeComponent(product!.imageFullUrl!)}' : ''}';
+
+    SharePlus.instance.share(ShareParams(
+      text: 'Check out "$productName"${restaurantName.isNotEmpty ? ' from $restaurantName' : ''} on Baedal Food Delivery! Order now:\n$shareUrl',
+    ));
   }
 
   void _fitSheetToContent(double screenHeight, double expandedHeaderHeight) {
@@ -405,6 +422,16 @@ class _FoodBottomSheetWidgetState extends State<FoodBottomSheetWidget> {
                     ),
                   ),
                 )),
+
+                if (AppConstants.webHostedUrl.isNotEmpty && product != null) ...[
+                  _buildHeaderButton(
+                    context: context,
+                    icon: Icons.share_outlined,
+                    backgroundColor: controlBg,
+                    onTap: _shareProduct,
+                  ),
+                  const SizedBox(width: Dimensions.paddingSmall),
+                ],
 
                 widget.isCampaign ? const SizedBox(width: 40) : GetBuilder<FavouriteController>(builder: (favouriteController) {
                   return CustomFavouriteWidget(

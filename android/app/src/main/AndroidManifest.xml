@@ -85,15 +85,24 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
 
-            <!-- Deep Links -->
+            <!-- Deep Links: Android App Links (HTTPS) -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="baedalfooddelivery.com" android:pathPrefix="/share" />
+                <data android:scheme="https" android:host="baedalfooddelivery.com" android:pathPrefix="/item" />
+                <data android:scheme="https" android:host="baedalfooddelivery.com" android:pathPrefix="/product" />
+                <data android:scheme="https" android:host="baedalfooddelivery.com" android:pathPrefix="/restaurants" />
+                <data android:scheme="https" android:host="baedalfooddelivery.com" android:pathPrefix="/restaurant" />
+            </intent-filter>
+
+            <!-- Deep Links: Custom URI Scheme Fallback -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <!-- Accepts URIs that begin with YOUR_SCHEME://YOUR_HOST -->
-                <data
-                    android:scheme="baedalfooddelivery"
-                    android:host="baedalfooddelivery.com" />
+                <data android:scheme="baedalfooddelivery" />
             </intent-filter>
 
         </activity>

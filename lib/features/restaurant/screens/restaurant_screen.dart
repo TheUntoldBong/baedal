@@ -842,8 +842,14 @@ class _RestaurantOverview extends StatelessWidget {
 
   void _share() {
     if (AppConstants.webHostedUrl.isEmpty) return;
-    final String shareUrl = '${AppConstants.webHostedUrl}${restController.filteringUrl(restaurant.slug ?? '')}';
-    SharePlus.instance.share(ShareParams(text: shareUrl));
+    final String restName = restaurant.name ?? 'Restaurant';
+    final String shareUrl = '${AppConstants.webHostedUrl}/share?type=restaurant&id=${restaurant.id}'
+        '&slug=${Uri.encodeComponent(restaurant.slug ?? '')}'
+        '&name=${Uri.encodeComponent(restName)}'
+        '${restaurant.logoFullUrl != null ? '&image=${Uri.encodeComponent(restaurant.logoFullUrl!)}' : ''}';
+    SharePlus.instance.share(ShareParams(
+      text: 'Check out "$restName" on Baedal Food Delivery! Order now:\n$shareUrl',
+    ));
   }
 
   @override

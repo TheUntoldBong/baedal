@@ -21,6 +21,7 @@ import 'package:stackfood_multivendor/features/splash/controllers/splash_control
 import 'package:stackfood_multivendor/features/splash/controllers/theme_controller.dart';
 import 'package:stackfood_multivendor/features/splash/domain/models/deep_link_body.dart';
 import 'package:stackfood_multivendor/helper/auth_helper.dart';
+import 'package:stackfood_multivendor/helper/deep_link_helper.dart';
 import 'package:stackfood_multivendor/helper/notification_helper.dart';
 import 'package:stackfood_multivendor/helper/responsive_helper.dart';
 import 'package:stackfood_multivendor/helper/route_helper.dart';
@@ -105,6 +106,10 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
+
+    if (!GetPlatform.isWeb) {
+      DeepLinkHelper.init();
+    }
 
     _route();
   }
