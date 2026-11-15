@@ -6,7 +6,6 @@ import 'package:get/get.dart';
 import 'package:stackfood_multivendor/common/widgets/custom_button_widget.dart';
 import 'package:stackfood_multivendor/features/profile/controllers/profile_controller.dart';
 import 'package:stackfood_multivendor/helper/responsive_helper.dart';
-import 'package:stackfood_multivendor/helper/route_helper.dart';
 import 'package:stackfood_multivendor/util/dimensions.dart';
 import 'package:stackfood_multivendor/util/images.dart';
 import 'package:stackfood_multivendor/util/styles.dart';
@@ -44,13 +43,15 @@ class AccountDeletionBottomSheet extends StatelessWidget {
         ),
         const SizedBox(height: Dimensions.paddingLarge),
 
-        Text(isRunningOrderAvailable ? 'you_cant_delete_your_account_yet'.tr : 'delete_your_account'.tr, style: context.heading.large.strong, textAlign: TextAlign.center),
+        Text('delete_your_account'.tr, style: context.heading.large.strong, textAlign: TextAlign.center),
         const SizedBox(height: Dimensions.padding2xSmall),
 
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 40),
           child: Text(
-            isRunningOrderAvailable ? 'please_complete_your_ongoing_and_accepted_orders'.tr : 'you_will_not_be_able_to_recover_your_data_again'.tr,
+            isRunningOrderAvailable
+                ? 'Any ongoing orders will be cancelled and your account and data will be permanently deleted.'
+                : 'you_will_not_be_able_to_recover_your_data_again'.tr,
             style: context.body.small.regular.overrideWith(color: context.textBaseMedium), textAlign: TextAlign.center,
           ),
         ),
@@ -58,26 +59,7 @@ class AccountDeletionBottomSheet extends StatelessWidget {
 
         Padding(
           padding: const EdgeInsets.only(left: 20, right: 20),
-          child: isRunningOrderAvailable ? Row(children: [
-            Expanded(child: CustomButtonWidget(
-              buttonText: 'cancel'.tr,
-              color: context.bgNeutralMedium,
-              fontSize: Dimensions.fontSizeDefault,
-              textColor: Theme.of(context).textTheme.bodyLarge!.color,
-              onPressed: () => Get.back(),
-            )),
-            const SizedBox(width: Dimensions.paddingDefault),
-
-            Expanded(child: CustomButtonWidget(
-              buttonText: 'view_orders'.tr,
-              color: context.primary,
-              fontSize: Dimensions.fontSizeDefault,
-              onPressed: () {
-                Get.back();
-                Get.toNamed(RouteHelper.getOrderRoute());
-              },
-            )),
-          ]) : GetBuilder<ProfileController>(builder: (pController) {
+          child: GetBuilder<ProfileController>(builder: (pController) {
             return pController.isLoading ? const Center(child: CircularProgressIndicator()) : Row(children: [
               Expanded(child: CustomButtonWidget(
                 buttonText: 'cancel'.tr,
