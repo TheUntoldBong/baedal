@@ -40,12 +40,18 @@ class AuthRepo implements AuthRepoInterface<SignUpBodyModel> {
     String? deviceToken;
     if(notificationDeviceToken.isEmpty){
       if (GetPlatform.isIOS && !GetPlatform.isWeb) {
-        FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(alert: true, badge: true, sound: true);
+        await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(alert: true, badge: true, sound: true);
         NotificationSettings settings = await FirebaseMessaging.instance.requestPermission(
           alert: true, announcement: false, badge: true, carPlay: false,
           criticalAlert: false, provisional: false, sound: true,
         );
-        if(settings.authorizationStatus == AuthorizationStatus.authorized) {
+        if(settings.authorizationStatus == AuthorizationStatus.authorized || settings.authorizationStatus == AuthorizationStatus.provisional) {
+          String? apnsToken;
+          for(int i = 0; i < 10; i++) {
+            apnsToken = await FirebaseMessaging.instance.getAPNSToken();
+            if(apnsToken != null) break;
+            await Future.delayed(const Duration(milliseconds: 500));
+          }
           deviceToken = await _saveDeviceToken();
         }
       }else {
@@ -58,15 +64,21 @@ class AuthRepo implements AuthRepoInterface<SignUpBodyModel> {
         }
       }
     }
-    return await apiClient.postData(AppConstants.tokenUri, {"_method": "put", "cm_firebase_token": notificationDeviceToken.isNotEmpty ? notificationDeviceToken : deviceToken??'@'});
+    if ((deviceToken == null || deviceToken == '@') && notificationDeviceToken.isEmpty) {
+      debugPrint('No valid FCM token available to update at this moment.');
+      return const Response(statusCode: 200, statusText: 'Token pending registration');
+    }
+    return await apiClient.postData(AppConstants.tokenUri, {"_method": "put", "cm_firebase_token": notificationDeviceToken.isNotEmpty ? notificationDeviceToken : deviceToken!});
   }
 
   Future<String?> _saveDeviceToken() async {
-    String? deviceToken = '@';
+    String? deviceToken;
     if(!GetPlatform.isWeb) {
       try {
-        deviceToken = (await FirebaseMessaging.instance.getToken())!;
-      }catch(_) {}
+        deviceToken = await FirebaseMessaging.instance.getToken();
+      }catch(e) {
+        debugPrint('Error getting FCM device token: $e');
+      }
     }
     if (deviceToken != null) {
       debugPrint('--------Device Token---------- $deviceToken');

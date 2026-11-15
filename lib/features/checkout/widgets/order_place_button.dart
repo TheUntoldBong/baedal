@@ -16,6 +16,7 @@ import 'package:stackfood_multivendor/features/location/controllers/location_con
 import 'package:stackfood_multivendor/helper/address_helper.dart';
 import 'package:stackfood_multivendor/helper/date_converter.dart';
 import 'package:stackfood_multivendor/helper/price_converter.dart';
+import 'package:stackfood_multivendor/helper/razorpay_helper.dart';
 import 'package:stackfood_multivendor/helper/responsive_helper.dart';
 import 'package:stackfood_multivendor/helper/route_helper.dart';
 import 'package:stackfood_multivendor/util/app_constants.dart';
@@ -143,7 +144,55 @@ class OrderPlaceButton extends StatelessWidget {
                   showCustomSnackBar('restaurant_is_closed_now'.tr);
                 }
               });
-            }else{
+            } else if(((checkoutController.paymentMethodIndex == 2) || (checkoutController.isPartialPay && checkoutController.paymentMethodIndex != 0)) && !GetPlatform.isWeb) {
+              Map<String, dynamic> data = {
+                "restaurant_id": placeOrderBody.restaurantId,
+                "order_type": placeOrderBody.orderType,
+                "schedule_at": placeOrderBody.scheduleAt,
+                "subscription_order": placeOrderBody.subscriptionOrder,
+              };
+
+              checkoutController.checkRestaurantValidation(data: data).then((response) {
+                if(response) {
+                  double payableOnlineAmount = checkoutController.isPartialPay
+                      ? (total - (Get.find<ProfileController>().userInfoModel?.walletBalance ?? 0))
+                      : total;
+                  if (payableOnlineAmount < 0) payableOnlineAmount = 0;
+
+                  if (payableOnlineAmount <= 0) {
+                    checkoutController.placeOrder(placeOrderBody, checkoutController.restaurant!.zoneId!, total, maxCodOrderAmount, fromCart, isCashOnDeliveryActive, proDiscount: proDiscount);
+                    return;
+                  }
+
+                  String customerName = isGuestLogIn
+                      ? (guestNameController.text.trim().isNotEmpty ? guestNameController.text.trim() : (placeOrderBody.contactPersonName ?? ''))
+                      : '${Get.find<ProfileController>().userInfoModel?.fName ?? ''} ${Get.find<ProfileController>().userInfoModel?.lName ?? ''}'.trim();
+                  String email = isGuestLogIn
+                      ? guestEmailController.text.trim()
+                      : (Get.find<ProfileController>().userInfoModel?.email ?? '');
+                  String contactNumber = isGuestLogIn
+                      ? guestNumberController.text.trim()
+                      : (placeOrderBody.contactPersonNumber ?? Get.find<ProfileController>().userInfoModel?.phone ?? '');
+
+                  RazorpayHelper.initiateAndCheckout(
+                    placeOrderBody: placeOrderBody,
+                    checkoutController: checkoutController,
+                    amount: payableOnlineAmount,
+                    zoneId: checkoutController.restaurant!.zoneId!,
+                    maxCodOrderAmount: maxCodOrderAmount,
+                    fromCart: fromCart,
+                    isCashOnDeliveryActive: isCashOnDeliveryActive,
+                    contactNumber: contactNumber,
+                    email: email,
+                    customerName: customerName,
+                    isDeliveryOrder: placeOrderBody.orderType == 'delivery',
+                    proDiscount: proDiscount,
+                  );
+                } else {
+                  showCustomSnackBar('restaurant_is_closed_now'.tr);
+                }
+              });
+            } else {
               checkoutController.placeOrder(placeOrderBody, checkoutController.restaurant!.zoneId!, total, maxCodOrderAmount, fromCart, isCashOnDeliveryActive, proDiscount: proDiscount);
             }
 

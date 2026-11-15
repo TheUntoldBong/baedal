@@ -52,6 +52,8 @@
 	<string>This app requires access to the microphone to search for food and restaurants using your voice.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Baedal requires photo library access to upload your profile picture, attach images in customer support chat, and add photos to food reviews.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Baedal requires photo library access to save order receipts and food images to your device.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>NSSpeechRecognitionUsageDescription</key>
@@ -87,6 +89,8 @@
 		<string>upi</string>
 		<string>phonepe</string>
 		<string>gpay</string>
+		<string>tez</string>
+		<string>paytm</string>
 		<string>paytmmp</string>
 		<string>bhim</string>
 		<string>credpay</string>

@@ -146,11 +146,12 @@ class CheckoutScreenState extends State<CheckoutScreen> {
       Get.find<ProController>().getProActiveOffer();
     }
 
-    checkoutController.setRestaurantDetails(restaurantId: _cartList![0].restaurantId);
-
-    await checkoutController.initCheckoutData(_cartList![0].restaurantId);
-
-    checkoutController.getDeliveryCoverageList(restaurantId: _cartList![0].restaurantId);
+    int? restaurantId = (_cartList != null && _cartList!.isNotEmpty) ? _cartList![0].restaurantId : widget.restaurantId;
+    if (restaurantId != null) {
+      checkoutController.setRestaurantDetails(restaurantId: restaurantId);
+      await checkoutController.initCheckoutData(restaurantId);
+      checkoutController.getDeliveryCoverageList(restaurantId: restaurantId);
+    }
 
 
     Get.find<CouponController>().setCoupon('', isUpdate: false);
@@ -203,7 +204,9 @@ class CheckoutScreenState extends State<CheckoutScreen> {
 
     if(!AuthHelper.isLoggedIn() && AuthHelper.isGuestLoggedIn() && checkoutController.isFirstTime){
       Future.delayed(const Duration(milliseconds: 300), () {
-        showCustomBottomSheet(child: GuestLoginBottomSheet(callBack: () => initCall()));
+        if(mounted && !AuthHelper.isLoggedIn() && ModalRoute.of(context)?.isCurrent == true){
+          showCustomBottomSheet(child: GuestLoginBottomSheet(callBack: () => initCall()));
+        }
       });
     }
   }
@@ -502,9 +505,11 @@ class CheckoutScreenState extends State<CheckoutScreen> {
           });
           });
         }) : const CheckoutScreenShimmerView();
-      }) : NotLoggedInScreen(callBack: (value) {
-        initCall();
-        setState(() {});
+      }) : NotLoggedInScreen(callBack: (value) async {
+        await initCall();
+        if(mounted) {
+          setState(() {});
+        }
       }),
     );
   }

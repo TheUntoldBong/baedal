@@ -53,6 +53,7 @@ class AppConstants {
   static const String orderCancelUri = '/api/v1/customer/order/cancel';
   static const String orderDeleteUri = '/api/v1/customer/order/delete';
   static const String codSwitchUri = '/api/v1/customer/order/payment-method';
+  static const String razorpayInitiateUri = '/api/v1/customer/order/razorpay-initiate';
   static const String razorpayCreateOrderUri = '/api/v1/customer/order/razorpay-create-order';
   static const String razorpayVerifyUri = '/api/v1/customer/order/razorpay-verify';
   static const String orderDetailsUri = '/api/v1/customer/order/details?order_id=';

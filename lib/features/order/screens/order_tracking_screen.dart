@@ -406,16 +406,26 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen> with WidgetsBi
         padding: const EdgeInsets.only(left: Dimensions.paddingSmall, right: Dimensions.paddingSmall, bottom: Dimensions.paddingSmall),
         child: TrackDetailsView(track: track, callback: () async {
           bool takeAway = track.orderType == 'take_away';
+          bool hasDeliveryMan = track.deliveryMan != null;
           orderController.cancelTimer();
+          int? vendorId = track.restaurant?.vendorId ?? track.restaurant?.id;
           await Get.toNamed(RouteHelper.getChatRoute(
-            notificationBody: takeAway ? NotificationBodyModel(restaurantId: track.restaurant!.id, orderId: int.parse(widget.orderID!))
+            notificationBody: (takeAway || !hasDeliveryMan)
+                ? NotificationBodyModel(restaurantId: vendorId, orderId: int.parse(widget.orderID!))
                 : NotificationBodyModel(deliverymanId: track.deliveryMan!.id, orderId: int.parse(widget.orderID!)),
-            user: User(
-              id: takeAway ? track.restaurant!.id : track.deliveryMan!.id,
-              fName: takeAway ? track.restaurant!.name : track.deliveryMan!.fName,
-              lName: takeAway ? '' : track.deliveryMan!.lName,
-              imageFullUrl: takeAway ? track.restaurant!.logoFullUrl : track.deliveryMan!.imageFullUrl,
-            ),
+            user: (takeAway || !hasDeliveryMan)
+                ? User(
+                    id: vendorId,
+                    fName: track.restaurant?.name,
+                    lName: '',
+                    imageFullUrl: track.restaurant?.logoFullUrl,
+                  )
+                : User(
+                    id: track.deliveryMan!.id,
+                    fName: track.deliveryMan!.fName,
+                    lName: track.deliveryMan!.lName,
+                    imageFullUrl: track.deliveryMan!.imageFullUrl,
+                  ),
           ));
           _timerTrackOrder();
         }),

@@ -221,9 +221,10 @@ class _RestaurantContactActions extends StatelessWidget {
   Future<void> _chat() async {
     final restaurant = order.restaurant;
     if (restaurant == null) return;
+    int? vendorId = restaurant.vendorId ?? restaurant.id;
     await Get.toNamed(RouteHelper.getChatRoute(
-      user: User(fName: restaurant.name, lName: '', imageFullUrl: restaurant.logoFullUrl),
-      notificationBody: NotificationBodyModel(restaurantId: restaurant.id, name:restaurant.name, orderId: int.tryParse(order.id.toString())),
+      user: User(id: vendorId, fName: restaurant.name, lName: '', imageFullUrl: restaurant.logoFullUrl),
+      notificationBody: NotificationBodyModel(restaurantId: vendorId, name: restaurant.name, orderId: int.tryParse(order.id.toString())),
     ));
   }
 

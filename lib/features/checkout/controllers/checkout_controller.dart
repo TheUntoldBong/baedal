@@ -995,7 +995,7 @@ class CheckoutController extends GetxController implements GetxService {
       orderID = response.body['order_id'].toString();
       noteController.clear();
 
-      bool isSettledImmediately = ((paymentMethodIndex == 0 || paymentMethodIndex == 1) && !isPartialPay) || (paymentMethodIndex == 0 && isPartialPay);
+      bool isSettledImmediately = ((paymentMethodIndex == 0 || paymentMethodIndex == 1 || placeOrderBody.paymentId != null) && !isPartialPay) || (paymentMethodIndex == 0 && isPartialPay);
       if(isSettledImmediately) {
         Response notificationResponse = await checkoutServiceInterface.sendNotificationRequest(orderID, Get.find<AuthController>().isLoggedIn() ? null : Get.find<AuthController>().getGuestId());
         bool reloadHome = notificationResponse.body != null && notificationResponse.body['reload_home'] == true;
@@ -1007,7 +1007,7 @@ class CheckoutController extends GetxController implements GetxService {
       Get.find<CartController>().getCartBundleList().then((_){});
 
       if(!isOfflinePay) {
-        _callback(true, message, orderID, zoneID, amount, maximumCodOrderAmount, fromCart, isCashOnDeliveryActive, placeOrderBody.contactPersonNumber, placeOrderBody.orderType == 'dine_in', placeOrderBody.orderType == 'delivery', proDiscount: proDiscount);
+        _callback(true, message, orderID, zoneID, amount, maximumCodOrderAmount, fromCart, isCashOnDeliveryActive, placeOrderBody.contactPersonNumber, placeOrderBody.orderType == 'dine_in', placeOrderBody.orderType == 'delivery', proDiscount: proDiscount, isPrePaidDigital: placeOrderBody.paymentId != null);
       } else {
         Get.find<CartController>().getCartDataOnline(restaurantId!);
       }
@@ -1016,7 +1016,7 @@ class CheckoutController extends GetxController implements GetxService {
 
     } else {
       if(!isOfflinePay){
-        _callback(false, response.statusText, '-1', zoneID, amount, maximumCodOrderAmount, fromCart, isCashOnDeliveryActive, placeOrderBody.contactPersonNumber, placeOrderBody.orderType == 'dine_in' , placeOrderBody.orderType == 'delivery');
+        _callback(false, response.statusText, '-1', zoneID, amount, maximumCodOrderAmount, fromCart, isCashOnDeliveryActive, placeOrderBody.contactPersonNumber, placeOrderBody.orderType == 'dine_in' , placeOrderBody.orderType == 'delivery', isPrePaidDigital: placeOrderBody.paymentId != null);
       }else{
         showCustomSnackBar(response.statusText);
       }
@@ -1034,7 +1034,7 @@ class CheckoutController extends GetxController implements GetxService {
   }
 
   void _callback(bool isSuccess, String? message, String orderID, int? zoneID, double amount, double? maximumCodOrderAmount, bool fromCart, bool isCashOnDeliveryActive,
-      String? contactNumber, bool isDineInOrder, bool isDeliveryOrder, {double proDiscount = 0}) async {
+      String? contactNumber, bool isDineInOrder, bool isDeliveryOrder, {double proDiscount = 0, bool isPrePaidDigital = false}) async {
     if(isSuccess) {
       if(fromCart) {
       }
@@ -1042,8 +1042,9 @@ class CheckoutController extends GetxController implements GetxService {
       stopLoader();
       bool isFullPaidByCashOrWallet = (paymentMethodIndex == 0 || paymentMethodIndex == 1) && !isPartialPay;
       bool isPartialPaidWithCod = paymentMethodIndex == 0 && isPartialPay;
+      bool isPrePaidOnline = isPrePaidDigital;
 
-      if(isFullPaidByCashOrWallet || isPartialPaidWithCod) {
+      if(isFullPaidByCashOrWallet || isPartialPaidWithCod || isPrePaidOnline) {
         double total = ((amount / 100) * Get.find<SplashController>().configModel!.loyaltyPointItemPurchasePoint!);
         Get.find<LoyaltyController>().saveEarningPoint(total.toStringAsFixed(0));
         if(isDineInOrder) {

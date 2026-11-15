@@ -7,6 +7,7 @@ import 'package:stackfood_multivendor/features/happy_hour/controllers/happy_hour
 import 'package:stackfood_multivendor/features/happy_hour/widgets/happy_hour_milestone_banner_widget.dart';
 import 'package:stackfood_multivendor/features/restaurant/controllers/restaurant_controller.dart';
 import 'package:stackfood_multivendor/features/splash/controllers/splash_controller.dart';
+import 'package:stackfood_multivendor/helper/auth_helper.dart';
 import 'package:stackfood_multivendor/helper/price_converter.dart';
 import 'package:stackfood_multivendor/helper/responsive_helper.dart';
 import 'package:stackfood_multivendor/helper/route_helper.dart';
@@ -229,7 +230,9 @@ class CheckoutButtonWidget extends StatelessWidget {
       showCustomSnackBar('one_or_more_product_unavailable'.tr);
     } else if(restaurantController.restaurant!.freeDelivery == null || restaurantController.restaurant!.cutlery == null) {
       showCustomSnackBar('restaurant_is_unavailable'.tr);
-    }else {
+    } else if(!AuthHelper.isLoggedIn() && !(Get.find<SplashController>().configModel?.guestCheckoutStatus ?? false)) {
+      Get.toNamed(RouteHelper.getSignInRoute(RouteHelper.getCheckoutRoute('cart', fromDineIn: fromDineIn, restaurantId: restaurantId)));
+    } else {
       Get.find<CouponController>().removeCouponData(false);
       Get.toNamed(RouteHelper.getCheckoutRoute('cart', fromDineIn: fromDineIn, restaurantId: restaurantId));
     }

@@ -230,6 +230,33 @@ class OrderStatusCard extends StatelessWidget {
                     ),
                   ),
 
+                  Builder(builder: (context) {
+                    final String? latestTime = order.delivered ?? order.pickedUp ?? order.handover ?? order.processing ?? order.confirmed ?? order.accepted ?? order.pending ?? order.createdAt;
+                    String formattedLatest = '';
+                    if (latestTime != null && latestTime.isNotEmpty) {
+                      try {
+                        formattedLatest = DateConverter.dateToTimeOnly(DateTime.parse(latestTime).toLocal());
+                      } catch (_) {}
+                    }
+                    if (formattedLatest.isEmpty) return const SizedBox.shrink();
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        Icon(Icons.access_time_rounded, size: 12, color: context.primary),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${'status'.tr}: $formattedLatest',
+                          style: context.body.extraSmall.medium.overrideWith(color: context.primary),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '• ${'timeline'.tr}',
+                          style: context.body.extraSmall.regular.overrideWith(color: context.textBaseMedium),
+                        ),
+                      ]),
+                    );
+                  }),
+
                   if (isSubscription) ...[
                     const SizedBox(height: Dimensions.paddingSmall),
                     Row(crossAxisAlignment: CrossAxisAlignment.center, children: [

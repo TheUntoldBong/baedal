@@ -324,10 +324,21 @@ class _StatusHistoryStep extends StatelessWidget {
         style: context.body.small.regular.overrideWith(color: context.textBaseMedium),
       ),
       if (step.isCompleted) ...[
-        const SizedBox(height: 2),
-        Text(
-          _dateTime(step.timestamp!),
-          style: context.body.extraSmall.regular.overrideWith(color: context.textBaseMedium),
+        const SizedBox(height: 4),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            color: context.primary.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(Icons.access_time_rounded, size: 12, color: context.primary),
+            const SizedBox(width: 4),
+            Text(
+              _dateTime(step.timestamp!),
+              style: context.body.extraSmall.medium.overrideWith(color: context.primary),
+            ),
+          ]),
         ),
       ],
     ]);

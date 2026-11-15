@@ -45,6 +45,9 @@ class PlaceOrderBodyModel {
   String? _saverDeliveryType;
   int? _zipCodeId;
   int? _areaId;
+  String? paymentId;
+  String? razorpayOrderId;
+  String? signature;
 
   PlaceOrderBodyModel({
     required List<OnlineCart> cart,
@@ -89,6 +92,9 @@ class PlaceOrderBodyModel {
     String? saverDeliveryType,
     int? zipCodeId,
     int? areaId,
+    this.paymentId,
+    this.razorpayOrderId,
+    this.signature,
   }) {
     _cart = cart;
     _couponDiscountAmount = couponDiscountAmount;
@@ -300,6 +306,15 @@ class PlaceOrderBodyModel {
     }
     if(_areaId != null) {
       data['area_id'] = _areaId.toString();
+    }
+    if (paymentId != null) {
+      data['payment_id'] = paymentId;
+    }
+    if (razorpayOrderId != null) {
+      data['razorpay_order_id'] = razorpayOrderId;
+    }
+    if (signature != null) {
+      data['signature'] = signature;
     }
     return data;
   }

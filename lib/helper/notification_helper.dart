@@ -27,9 +27,21 @@ class NotificationHelper {
 
   static Future<void> initialize(FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin) async {
     var androidInitialize = const AndroidInitializationSettings('notification_icon');
-    var iOSInitialize = const DarwinInitializationSettings();
+    var iOSInitialize = const DarwinInitializationSettings(
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
+    );
     var initializationsSettings = InitializationSettings(android: androidInitialize, iOS: iOSInitialize);
-    flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()!.requestNotificationsPermission();
+
+    if (GetPlatform.isAndroid) {
+      flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.requestNotificationsPermission();
+    } else if (GetPlatform.isIOS) {
+      await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(alert: true, badge: true, sound: true);
+      flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()?.requestPermissions(
+        alert: true, badge: true, sound: true,
+      );
+    }
     flutterLocalNotificationsPlugin.initialize(initializationsSettings, onDidReceiveNotificationResponse: (NotificationResponse response) async {
       try{
         NotificationBodyModel payload;
@@ -127,7 +139,7 @@ class NotificationHelper {
   }
 
   static Future<void> showNotification(RemoteMessage message, FlutterLocalNotificationsPlugin fln) async {
-    if(!GetPlatform.isIOS && message.data.isNotEmpty) {
+    if(message.data.isNotEmpty) {
       String? title;
       String? body;
       String? orderID;
@@ -159,7 +171,13 @@ class NotificationHelper {
       'stackfood', 'stackfood', playSound: true,
       importance: Importance.max, priority: Priority.max, sound: RawResourceAndroidNotificationSound('notification'),
     );
-    const NotificationDetails platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
+    const DarwinNotificationDetails iOSPlatformChannelSpecifics = DarwinNotificationDetails(
+      sound: 'notification.wav',
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics, iOS: iOSPlatformChannelSpecifics);
     await fln.show(0, title, body, platformChannelSpecifics, payload: notificationBody != null ? jsonEncode(notificationBody.toJson()) : null);
   }
 
@@ -173,7 +191,13 @@ class NotificationHelper {
       styleInformation: bigTextStyleInformation, priority: Priority.max, playSound: true,
       sound: const RawResourceAndroidNotificationSound('notification'),
     );
-    NotificationDetails platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
+    const DarwinNotificationDetails iOSPlatformChannelSpecifics = DarwinNotificationDetails(
+      sound: 'notification.wav',
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+    NotificationDetails platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics, iOS: iOSPlatformChannelSpecifics);
     await fln.show(0, title, body, platformChannelSpecifics, payload: notificationBody != null ? jsonEncode(notificationBody.toJson()) : null);
   }
 
@@ -193,7 +217,14 @@ class NotificationHelper {
       styleInformation: bigPictureStyleInformation, importance: Importance.max,
       sound: const RawResourceAndroidNotificationSound('notification'),
     );
-    final NotificationDetails platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
+    final DarwinNotificationDetails iOSPlatformChannelSpecifics = DarwinNotificationDetails(
+      sound: 'notification.wav',
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+      attachments: [DarwinNotificationAttachment(bigPicturePath)],
+    );
+    final NotificationDetails platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics, iOS: iOSPlatformChannelSpecifics);
     await fln.show(0, title, body, platformChannelSpecifics, payload: notificationBody != null ? jsonEncode(notificationBody.toJson()) : null);
   }
 
