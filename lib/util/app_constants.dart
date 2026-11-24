@@ -12,6 +12,8 @@ class AppConstants {
   static const Color primaryColor = Color(0xFF20A7DB);
   static const bool payInWevView = true;
   static const String webHostedUrl = 'https://baedalfooddelivery.com';
+  static const String appUrlAndroidDefault = 'https://play.google.com/store/apps/details?id=com.baedal.app';
+  static const String appUrlIosDefault = 'https://apps.apple.com/us/app/baedal-food-more/id6819366241';
   static const String googleServerClientId = '369896627923-pvmv91i1kmnnk87v3hdqajafaccil2md.apps.googleusercontent.com';
   static const String razorpayKey = 'rzp_live_TwCYmWFJc3dZQs';
 

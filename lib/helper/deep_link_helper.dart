@@ -39,35 +39,55 @@ class DeepLinkHelper {
       final Uri? initialUri = await _appLinks.getInitialLink();
       if (initialUri != null) {
         debugPrint('[DeepLinkHelper] Cold start initial URI: $initialUri');
-        _pendingUri = initialUri;
-        // Delay slightly until splash and routes are ready
-        Future.delayed(const Duration(milliseconds: 1500), () {
-          if (_pendingUri != null) {
-            handleUri(_pendingUri!);
-            _pendingUri = null;
-          }
-        });
+        _waitForSplashAndNavigate(initialUri);
       }
     } catch (e) {
       debugPrint('[DeepLinkHelper] Error reading initial link: $e');
     }
   }
 
+  static Future<void> _waitForSplashAndNavigate(Uri uri) async {
+    _pendingUri = uri;
+    int attempts = 0;
+    while ((Get.currentRoute.isEmpty || Get.currentRoute.startsWith(RouteHelper.splash)) && attempts < 50) {
+      await Future.delayed(const Duration(milliseconds: 200));
+      attempts++;
+    }
+    // Give a brief breather for the destination route to settle
+    await Future.delayed(const Duration(milliseconds: 400));
+    if (_pendingUri != null) {
+      final Uri toHandle = _pendingUri!;
+      _pendingUri = null;
+      handleUri(toHandle);
+    }
+  }
+
   static void handleUri(Uri uri) async {
     debugPrint('[DeepLinkHelper] Handling URI: $uri (path=${uri.path}, host=${uri.host}, scheme=${uri.scheme})');
+
+    // If splash screen is still running, wait for it to complete navigation first
+    if (Get.currentRoute.isEmpty || Get.currentRoute.startsWith(RouteHelper.splash)) {
+      debugPrint('[DeepLinkHelper] Splash screen is active, queueing URI until navigation completes: $uri');
+      _waitForSplashAndNavigate(uri);
+      return;
+    }
 
     String? type;
     String? id;
     String? slug;
 
     // 1. Query parameter based link:
-    // e.g. https://baedalfooddelivery.com/share?type=item&id=124
-    // or baedalfooddelivery://item?id=124
+    // e.g. https://baedalfooddelivery.com/share?type=restaurant&id=15&slug=swad-15
+    // or baedalfooddelivery://restaurant?id=15&slug=swad-15
     if (uri.queryParameters.containsKey('type')) {
       type = uri.queryParameters['type'];
     }
     if (uri.queryParameters.containsKey('id')) {
       id = uri.queryParameters['id'];
+    } else if (uri.queryParameters.containsKey('restaurant_id')) {
+      id = uri.queryParameters['restaurant_id'];
+    } else if (uri.queryParameters.containsKey('product_id')) {
+      id = uri.queryParameters['product_id'];
     }
     if (uri.queryParameters.containsKey('slug')) {
       slug = uri.queryParameters['slug'];
@@ -82,7 +102,7 @@ class DeepLinkHelper {
         } else if (uri.host == 'restaurant' || uri.host == 'restaurants') {
           type = 'restaurant';
         } else if (uri.pathSegments.isNotEmpty) {
-          String first = uri.pathSegments.first;
+          String first = uri.pathSegments.first.toLowerCase();
           if (first == 'item' || first == 'product') type = 'item';
           if (first == 'restaurant' || first == 'restaurants') type = 'restaurant';
         }
@@ -103,9 +123,10 @@ class DeepLinkHelper {
       } else if (first == 'restaurant' || first == 'restaurants') {
         type = 'restaurant';
         if (segments.length > 1) {
-          slug ??= segments[1];
           if (int.tryParse(segments[1]) != null) {
             id ??= segments[1];
+          } else {
+            slug ??= segments[1];
           }
         }
       }
@@ -127,7 +148,7 @@ class DeepLinkHelper {
       debugPrint('[DeepLinkHelper] Fetching product details for ID: $productId');
 
       // Wait if splash screen is still running
-      if (Get.currentRoute.startsWith(RouteHelper.splash)) {
+      if (Get.currentRoute.isEmpty || Get.currentRoute.startsWith(RouteHelper.splash)) {
         await Future.delayed(const Duration(milliseconds: 1500));
       }
 
@@ -155,8 +176,13 @@ class DeepLinkHelper {
   static void _openRestaurant(int? restaurantId, String? slug) {
     try {
       debugPrint('[DeepLinkHelper] Opening restaurant: id=$restaurantId, slug=$slug');
-      if (restaurantId != null || (slug != null && slug.isNotEmpty)) {
-        Get.toNamed(RouteHelper.getRestaurantRoute(restaurantId, slug: slug ?? ''));
+      String safeSlug = (slug != null && slug.trim().isNotEmpty) ? slug.trim() : '';
+      if (safeSlug.isEmpty && restaurantId != null) {
+        safeSlug = 'restaurant-$restaurantId';
+      }
+
+      if (restaurantId != null || safeSlug.isNotEmpty) {
+        Get.toNamed(RouteHelper.getRestaurantRoute(restaurantId, slug: safeSlug));
       }
     } catch (e) {
       debugPrint('[DeepLinkHelper] Error opening restaurant: $e');

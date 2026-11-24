@@ -5,6 +5,7 @@ import 'package:stackfood_multivendor/util/images.dart';
 import 'package:stackfood_multivendor/util/styles.dart';
 import 'package:stackfood_multivendor/common/widgets/custom_button_widget.dart';
 import 'package:stackfood_multivendor/common/widgets/custom_snackbar_widget.dart';
+import 'package:stackfood_multivendor/util/app_constants.dart';
 import 'package:stackfood_multivendor/util/color_resources.dart';
 import 'package:flutter/material.dart';
 import 'package:stackfood_multivendor/common/widgets/custom_asset_image_widget.dart';
@@ -102,13 +103,21 @@ class UpdateScreen extends StatelessWidget {
               ]),
         
               isUpdate ? CustomButtonWidget(buttonText: 'update_now'.tr, onPressed: () async {
-                String? appUrl = 'https://google.com';
+                String appUrl = AppConstants.appUrlAndroidDefault;
                 if(GetPlatform.isAndroid) {
-                  appUrl = splashController.configModel!.appUrlAndroid;
-                }else if(GetPlatform.isIOS) {
-                  appUrl = splashController.configModel!.appUrlIos;
+                  final configAndroid = splashController.configModel?.appUrlAndroid;
+                  if (configAndroid != null && configAndroid.trim().isNotEmpty) {
+                    appUrl = configAndroid.trim();
+                  }
+                } else if(GetPlatform.isIOS) {
+                  final configIos = splashController.configModel?.appUrlIos;
+                  if (configIos != null && configIos.trim().isNotEmpty) {
+                    appUrl = configIos.trim();
+                  } else {
+                    appUrl = AppConstants.appUrlIosDefault;
+                  }
                 }
-                if(await canLaunchUrlString(appUrl!)) {
+                if(await canLaunchUrlString(appUrl)) {
                   launchUrlString(appUrl, mode: LaunchMode.externalApplication);
                 }else {
                   showCustomSnackBar('${'can_not_launch'.tr} $appUrl');

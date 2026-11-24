@@ -222,7 +222,7 @@ class RouteHelper {
   static String getBogoOfferDetailsRoute(String idOrSlug) => '$bogoOfferDetailsScreen?id=$idOrSlug';
 
   static String getRestaurantRoute(int? id, {String? slug, bool fromDinIn = false}) {
-    String urlSlug = slug ?? 'restaurant-$id';
+    String urlSlug = (slug != null && slug.trim().isNotEmpty) ? slug.trim() : (id != null ? 'restaurant-$id' : 'restaurant');
 
     urlSlug = urlSlug
         .toLowerCase()
@@ -230,6 +230,10 @@ class RouteHelper {
         .replaceAll(RegExp(r'\s+'), '-')
         .replaceAll(RegExp(r'-+'), '-')
         .trim();
+
+    if (urlSlug.isEmpty) {
+      urlSlug = id != null ? 'restaurant-$id' : 'restaurant';
+    }
 
     return '$restaurant/$urlSlug?id=$id&from_dine_in=$fromDinIn';
   }
@@ -480,11 +484,23 @@ class RouteHelper {
     GetPage(name: offer, page: () => getRoute(Get.arguments)),
     GetPage(name: bogoOfferScreen, page: () => getRoute(const BogoOfferScreen())),
     GetPage(name: bogoOfferDetailsScreen, page: () => getRoute(BogoOfferDetailsScreen(offerIdOrSlug: Get.parameters['id']))),
-    GetPage(name: '$restaurant/:slug', page: () {
+    GetPage(name: restaurant, page: () {
+      final int? id = (Get.parameters['id'] != null && Get.parameters['id'] != 'null') ? int.tryParse(Get.parameters['id']!) : null;
+      final String slug = Get.parameters['slug'] ?? '';
       return getRoute(Get.arguments ?? RestaurantScreen(
-        restaurant: Restaurant(id: Get.parameters['id'] != 'null' && Get.parameters['id'] != null ? int.parse(Get.parameters['id']!) : null),
-        slug: Get.parameters['slug'] ?? '', fromDineIn: Get.parameters['from_dine_in'] == 'true',
-      ), byPuss: Get.parameters['slug']?.isNotEmpty ?? false);
+        restaurant: Restaurant(id: id),
+        slug: slug,
+        fromDineIn: Get.parameters['from_dine_in'] == 'true',
+      ), byPuss: true);
+    }),
+    GetPage(name: '$restaurant/:slug', page: () {
+      final int? id = (Get.parameters['id'] != null && Get.parameters['id'] != 'null') ? int.tryParse(Get.parameters['id']!) : null;
+      final String slug = (Get.parameters['slug'] != null && Get.parameters['slug'] != 'null') ? Get.parameters['slug']! : '';
+      return getRoute(Get.arguments ?? RestaurantScreen(
+        restaurant: Restaurant(id: id),
+        slug: slug,
+        fromDineIn: Get.parameters['from_dine_in'] == 'true',
+      ), byPuss: slug.isNotEmpty);
     }),
     GetPage(name: orderDetails, page: () {
       return getRoute(Get.arguments ?? OrderDetailsScreen(

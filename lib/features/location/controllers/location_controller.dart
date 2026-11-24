@@ -1,3 +1,6 @@
+import 'package:flutter/foundation.dart';
+import 'package:stackfood_multivendor/common/enums/data_source_enum.dart';
+import 'package:stackfood_multivendor/features/address/controllers/address_controller.dart';
 import 'package:stackfood_multivendor/features/cart/controllers/cart_controller.dart';
 import 'package:stackfood_multivendor/features/checkout/controllers/checkout_controller.dart';
 import 'package:stackfood_multivendor/features/home/screens/home_screen.dart';
@@ -288,6 +291,136 @@ class LocationController extends GetxController implements GetxService {
 
   Future<void> updateZone() async {
     await locationServiceInterface.updateZone();
+  }
+
+  DateTime? _lastManualAddressSelectionTime;
+
+  void markManualAddressSelected() {
+    _lastManualAddressSelectionTime = DateTime.now();
+  }
+
+  Future<void> switchActiveAddressSilently(AddressModel newAddress) async {
+    final currentAddress = AddressHelper.getAddressFromSharedPref();
+    locationServiceInterface.handleTopicSubscription(currentAddress, newAddress);
+    await AddressHelper.saveAddressInSharedPref(newAddress);
+    if (AuthHelper.isLoggedIn() && !AuthHelper.isGuestLoggedIn()) {
+      await Get.find<FavouriteController>().getFavouriteList();
+      await updateZone();
+    }
+    update();
+    HomeScreen.loadData(true);
+    Get.find<CheckoutController>().clearPrevData();
+  }
+
+  Future<void> autoDetectAndSelectNearestAddress({bool force = false}) async {
+    if (!force && _lastManualAddressSelectionTime != null) {
+      if (DateTime.now().difference(_lastManualAddressSelectionTime!) < const Duration(minutes: 15)) {
+        return;
+      }
+    }
+
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return;
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+        return;
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 4),
+        ),
+      );
+
+      AddressModel? currentActive = AddressHelper.getAddressFromSharedPref();
+
+      AddressModel? matchedSavedAddress;
+      double minDistance = double.infinity;
+      const double matchThresholdMeters = 400.0;
+
+      if (AuthHelper.isLoggedIn()) {
+        List<AddressModel>? addressList = Get.find<AddressController>().addressList;
+        if (addressList == null || addressList.isEmpty) {
+          await Get.find<AddressController>().getAddressList(dataSource: DataSourceEnum.local);
+          addressList = Get.find<AddressController>().addressList;
+        }
+
+        if (addressList != null && addressList.isNotEmpty) {
+          for (final addr in addressList) {
+            if (addr.latitude != null && addr.longitude != null) {
+              double? lat = double.tryParse(addr.latitude!);
+              double? lng = double.tryParse(addr.longitude!);
+              if (lat != null && lng != null) {
+                double dist = Geolocator.distanceBetween(
+                  position.latitude,
+                  position.longitude,
+                  lat,
+                  lng,
+                );
+                if (dist <= matchThresholdMeters && dist < minDistance) {
+                  minDistance = dist;
+                  matchedSavedAddress = addr;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      if (matchedSavedAddress != null) {
+        if (currentActive != null && currentActive.id == matchedSavedAddress.id) {
+          return;
+        }
+        if (matchedSavedAddress.zoneId == null || matchedSavedAddress.zoneData == null) {
+          ZoneResponseModel zoneResponse = await getZone(matchedSavedAddress.latitude, matchedSavedAddress.longitude, false);
+          if (zoneResponse.isSuccess) {
+            matchedSavedAddress.zoneId = zoneResponse.zoneIds[0];
+            matchedSavedAddress.zoneIds = zoneResponse.zoneIds;
+            matchedSavedAddress.zoneData = zoneResponse.zoneData;
+          }
+        }
+        await switchActiveAddressSilently(matchedSavedAddress);
+        return;
+      }
+
+      if (currentActive != null && currentActive.latitude != null && currentActive.longitude != null) {
+        double? activeLat = double.tryParse(currentActive.latitude!);
+        double? activeLng = double.tryParse(currentActive.longitude!);
+        if (activeLat != null && activeLng != null) {
+          double distFromActive = Geolocator.distanceBetween(
+            position.latitude,
+            position.longitude,
+            activeLat,
+            activeLng,
+          );
+          if (distFromActive <= matchThresholdMeters) {
+            return;
+          }
+        }
+      }
+
+      String addressFromGeocode = await getAddressFromGeocode(LatLng(position.latitude, position.longitude));
+      ZoneResponseModel response = await getZone(position.latitude.toString(), position.longitude.toString(), false);
+      if (response.isSuccess) {
+        AddressModel liveAddress = AddressModel(
+          latitude: position.latitude.toString(),
+          longitude: position.longitude.toString(),
+          addressType: 'others',
+          zoneId: response.zoneIds.isNotEmpty ? response.zoneIds[0] : 0,
+          zoneIds: response.zoneIds,
+          address: addressFromGeocode,
+          zoneData: response.zoneData,
+        );
+        await switchActiveAddressSilently(liveAddress);
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[Location] autoDetect error: $e');
+      }
+    }
   }
 
 }

@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stackfood_multivendor/common/widgets/custom_snackbar_widget.dart';
 import 'package:stackfood_multivendor/features/splash/controllers/splash_controller.dart';
+import 'package:stackfood_multivendor/util/app_constants.dart';
 import 'package:stackfood_multivendor/util/color_resources.dart';
 import 'package:stackfood_multivendor/util/dimensions.dart';
 import 'package:stackfood_multivendor/util/styles.dart';
@@ -100,16 +101,18 @@ class _OrderReviewDialogWidgetState extends State<OrderReviewDialogWidget> with 
     final String packageName = 'com.baedal.app';
     final Uri marketUri = Uri.parse('market://details?id=$packageName');
 
-    String webUrl = 'https://play.google.com/store/apps/details?id=$packageName';
+    String webUrl = AppConstants.appUrlAndroidDefault;
     if (GetPlatform.isAndroid) {
       final configAndroidUrl = Get.find<SplashController>().configModel?.appUrlAndroid;
       if (configAndroidUrl != null && configAndroidUrl.trim().isNotEmpty) {
-        webUrl = configAndroidUrl;
+        webUrl = configAndroidUrl.trim();
       }
     } else if (GetPlatform.isIOS) {
       final configIosUrl = Get.find<SplashController>().configModel?.appUrlIos;
       if (configIosUrl != null && configIosUrl.trim().isNotEmpty) {
-        webUrl = configIosUrl;
+        webUrl = configIosUrl.trim();
+      } else {
+        webUrl = AppConstants.appUrlIosDefault;
       }
     }
 

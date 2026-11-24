@@ -13,8 +13,10 @@ import 'package:stackfood_multivendor/features/auth/controllers/auth_controller.
 import 'package:stackfood_multivendor/features/auth/domain/centralize_login_enum.dart';
 import 'package:stackfood_multivendor/features/language/controllers/localization_controller.dart';
 import 'package:stackfood_multivendor/features/splash/controllers/splash_controller.dart';
+import 'package:stackfood_multivendor/helper/address_helper.dart';
 import 'package:stackfood_multivendor/helper/custom_validator.dart';
 import 'package:stackfood_multivendor/helper/responsive_helper.dart';
+import 'package:stackfood_multivendor/helper/route_helper.dart';
 import 'package:stackfood_multivendor/util/dimensions.dart';
 import 'package:stackfood_multivendor/util/images.dart';
 import 'package:stackfood_multivendor/util/styles.dart';
@@ -188,7 +190,12 @@ class _NewUserSetupScreenState extends State<NewUserSetupScreen> {
                           referCode: _referCodeController.text.trim(),
                         ).then((response) {
                           if(response.isSuccess) {
-                            Get.find<SplashController>().navigateToLocationScreen('sign-in', offNamed: true);
+                            final prefAddress = AddressHelper.getAddressFromSharedPref();
+                            if (prefAddress != null && (prefAddress.address?.isNotEmpty ?? false)) {
+                              Get.find<SplashController>().navigateToLocationScreen('sign-in', offNamed: true);
+                            } else {
+                              Get.offAllNamed(RouteHelper.getAccessLocationRoute('sign-in'));
+                            }
                           } else {
 
                             if(response.code == 'email'){

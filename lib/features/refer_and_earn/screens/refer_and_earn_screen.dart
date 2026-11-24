@@ -61,11 +61,47 @@ class _ReferAndEarnScreenState extends State<ReferAndEarnScreen> {
                 child: SizedBox(
                   width: Dimensions.webMaxWidth,
                   child: GetBuilder<ReferAndEarnController>(builder: (referAndEarnController) {
-                    void shareText() => SharePlus.instance.share(
-                      ShareParams(text: Get.find<SplashController>().configModel?.appUrlAndroid != null ? '${AppConstants.appName} ${'referral_code'.tr}: ${referAndEarnController.userInfoModel!.refCode} \n${'download_app_from_this_link'.tr}: ${Get.find<SplashController>().configModel?.appUrlAndroid}'
-                        : '${AppConstants.appName} ${'referral_code'.tr}: ${referAndEarnController.userInfoModel!.refCode}'),
-                    );
-                    String qrLink = '${Get.find<SplashController>().configModel?.appUrlAndroid ?? ''}?ref=${referAndEarnController.userInfoModel?.refCode ?? ''}';
+                    void shareText() {
+                      final config = Get.find<SplashController>().configModel;
+                      final String refCode = referAndEarnController.userInfoModel?.refCode ?? '';
+
+                      String androidUrl = (config?.appUrlAndroid != null && config!.appUrlAndroid!.trim().isNotEmpty)
+                          ? config.appUrlAndroid!.trim()
+                          : AppConstants.appUrlAndroidDefault;
+
+                      String iosUrl = (config?.appUrlIos != null && config!.appUrlIos!.trim().isNotEmpty)
+                          ? config.appUrlIos!.trim()
+                          : AppConstants.appUrlIosDefault;
+
+                      StringBuffer buffer = StringBuffer();
+                      buffer.writeln('${'invite_friends_and_get_rewarded'.tr} - ${AppConstants.appName}!');
+                      buffer.writeln('${'referral_code'.tr}: $refCode');
+                      buffer.writeln();
+                      buffer.writeln('${'download_app_from_this_link'.tr}:');
+                      if (GetPlatform.isIOS) {
+                        if (iosUrl.isNotEmpty) {
+                          buffer.writeln('iOS: $iosUrl');
+                        }
+                        buffer.writeln('Android: $androidUrl');
+                      } else {
+                        buffer.writeln('Android: $androidUrl');
+                        if (iosUrl.isNotEmpty) {
+                          buffer.writeln('iOS: $iosUrl');
+                        }
+                      }
+
+                      SharePlus.instance.share(ShareParams(text: buffer.toString().trim()));
+                    }
+
+                    String appLink = (GetPlatform.isIOS)
+                        ? ((Get.find<SplashController>().configModel?.appUrlIos?.trim().isNotEmpty ?? false)
+                            ? Get.find<SplashController>().configModel!.appUrlIos!.trim()
+                            : AppConstants.appUrlIosDefault)
+                        : ((Get.find<SplashController>().configModel?.appUrlAndroid?.trim().isNotEmpty ?? false)
+                            ? Get.find<SplashController>().configModel!.appUrlAndroid!.trim()
+                            : AppConstants.appUrlAndroidDefault);
+
+                    String qrLink = '$appLink?ref=${referAndEarnController.userInfoModel?.refCode ?? ''}';
 
                     return Column(mainAxisAlignment: MainAxisAlignment.start, children: [
 

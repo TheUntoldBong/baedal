@@ -5,6 +5,7 @@ import 'package:stackfood_multivendor/features/splash/domain/models/config_model
 import 'package:stackfood_multivendor/features/auth/widgets/auth_dialog_widget.dart';
 import 'package:stackfood_multivendor/helper/responsive_helper.dart';
 import 'package:stackfood_multivendor/helper/route_helper.dart';
+import 'package:stackfood_multivendor/util/app_constants.dart';
 import 'package:stackfood_multivendor/util/dimensions.dart';
 import 'package:stackfood_multivendor/util/images.dart';
 import 'package:stackfood_multivendor/util/styles.dart';
@@ -262,7 +263,7 @@ class _FooterViewWidgetState extends State<FooterViewWidget> {
 
 
 
-                        (_config.appUrlAndroid != null || _config.appUrlIos != null) ? Column(
+                        Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
 
@@ -270,23 +271,33 @@ class _FooterViewWidgetState extends State<FooterViewWidget> {
                             const SizedBox(height: Dimensions.paddingSizeLarge),
 
 
-                            _config.appUrlAndroid != null ? InkWell(
-                              onTap: () => _launchURL(_config.appUrlAndroid ?? ''),
+                            InkWell(
+                              onTap: () {
+                                final url = (_config.appUrlAndroid != null && _config.appUrlAndroid!.trim().isNotEmpty)
+                                    ? _config.appUrlAndroid!.trim()
+                                    : AppConstants.appUrlAndroidDefault;
+                                _launchURL(url);
+                              },
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeExtraSmall),
                                 child: Image.asset(Images.landingGooglePlay, height: 40, fit: BoxFit.contain),
                               ),
-                            ) : const SizedBox(),
+                            ),
 
-                            _config.appUrlIos != null ? InkWell(
-                              onTap: () => _launchURL(_config.appUrlIos ?? ''),
+                            InkWell(
+                              onTap: () {
+                                final url = (_config.appUrlIos != null && _config.appUrlIos!.trim().isNotEmpty)
+                                    ? _config.appUrlIos!.trim()
+                                    : AppConstants.appUrlIosDefault;
+                                _launchURL(url);
+                              },
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeExtraSmall),
                                 child: Image.asset(Images.landingAppStore, height: 40, fit: BoxFit.contain),
                               ),
-                            ) : const SizedBox(),
+                            ),
                           ],
-                        ) : const SizedBox(),
+                        ),
 
                       ],
                     ),

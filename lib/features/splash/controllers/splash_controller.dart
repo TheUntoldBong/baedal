@@ -201,7 +201,12 @@ class SplashController extends GetxController implements GetxService {
             );
           });
         } else {
-          Get.offNamed(RouteHelper.getInitialRoute(fromSplash: true));
+          final prefAddress = AddressHelper.getAddressFromSharedPref();
+          if (prefAddress != null && (prefAddress.address?.isNotEmpty ?? false)) {
+            Get.offNamed(RouteHelper.getInitialRoute(fromSplash: true));
+          } else {
+            Get.offNamed(RouteHelper.getAccessLocationRoute(page));
+          }
         }
       }else {
         if(ResponsiveHelper.isDesktop(Get.context)) {

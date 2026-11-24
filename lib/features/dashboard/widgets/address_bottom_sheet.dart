@@ -111,6 +111,7 @@ class AddressBottomSheet extends StatelessWidget {
 
                         return InkWell(
                           onTap: () {
+                            Get.find<LocationController>().markManualAddressSelected();
                             Get.dialog(const CustomLoaderWidget(), barrierDismissible: false);
                             Get.find<LocationController>().saveAddressAndNavigate(
                               address, false, null, false, ResponsiveHelper.isDesktop(context),
@@ -208,6 +209,7 @@ class AddressBottomSheet extends StatelessWidget {
   }
 
   void _onCurrentLocationButtonPressed() {
+    Get.find<LocationController>().markManualAddressSelected();
     Get.find<LocationController>().checkPermission(() async {
       Get.dialog(const CustomLoaderWidget(), barrierDismissible: false);
       AddressModel address = await Get.find<LocationController>().getCurrentLocation(true);

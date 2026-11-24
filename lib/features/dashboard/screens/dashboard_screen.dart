@@ -25,6 +25,7 @@ import 'package:stackfood_multivendor/features/dashboard/widgets/registration_su
 import 'package:stackfood_multivendor/features/dashboard/widgets/running_order_view_widget.dart';
 import 'package:stackfood_multivendor/features/home/controllers/home_controller.dart';
 import 'package:stackfood_multivendor/features/home/screens/home_screen.dart';
+import 'package:stackfood_multivendor/features/location/controllers/location_controller.dart';
 import 'package:stackfood_multivendor/features/loyalty/controllers/loyalty_controller.dart';
 import 'package:stackfood_multivendor/features/menu/screens/menu_screen.dart';
 import 'package:stackfood_multivendor/features/order/controllers/order_controller.dart';
@@ -43,7 +44,7 @@ class DashboardScreen extends StatefulWidget {
   DashboardScreenState createState() => DashboardScreenState();
 }
 
-class DashboardScreenState extends State<DashboardScreen> {
+class DashboardScreenState extends State<DashboardScreen> with WidgetsBindingObserver {
   PageController? _pageController;
   int _pageIndex = 0;
   late List<Widget> _screens;
@@ -55,6 +56,7 @@ class DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
     _isLogin = Get.find<AuthController>().isLoggedIn();
 
@@ -94,10 +96,22 @@ class DashboardScreenState extends State<DashboardScreen> {
       setState(() {});
     });
 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Get.find<LocationController>().autoDetectAndSelectNearestAddress();
+    });
+
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      Get.find<LocationController>().autoDetectAndSelectNearestAddress();
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     Get.find<DashboardController>().removePageSelector(_setPage);
     _pageController?.dispose();
     super.dispose();

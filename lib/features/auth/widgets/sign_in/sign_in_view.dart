@@ -11,7 +11,6 @@ import 'package:stackfood_multivendor/common/widgets/custom_text_field_widget.da
 import 'package:stackfood_multivendor/common/widgets/validate_check.dart';
 import 'package:stackfood_multivendor/features/auth/controllers/auth_controller.dart';
 import 'package:stackfood_multivendor/features/auth/domain/centralize_login_enum.dart';
-import 'package:stackfood_multivendor/features/auth/widgets/sign_up_widget.dart';
 import 'package:stackfood_multivendor/features/auth/widgets/social_login_widget.dart';
 import 'package:stackfood_multivendor/features/auth/widgets/trams_conditions_check_box_widget.dart';
 import 'package:stackfood_multivendor/features/favourite/controllers/favourite_controller.dart';
@@ -398,22 +397,13 @@ class _SignInViewState extends State<SignInView> {
         const SizedBox(width: Dimensions.paddingSizeExtraSmall),
         InkWell(
           onTap: () {
-            if (ResponsiveHelper.isDesktop(context)) {
-              Get.back();
-              Get.dialog(
-                SizedBox(
-                  width: 700,
-                  child: Dialog(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Dimensions.radiusSmall)),
-                    backgroundColor: Theme.of(context).cardColor,
-                    insetPadding: EdgeInsets.zero,
-                    child: const SignUpWidget(),
-                  ),
-                ),
-              );
-            } else {
-              Get.toNamed(RouteHelper.getSignUpRoute());
+            if (_selectedTab != 0) {
+              setState(() => _selectedTab = 0);
+              if (widget.isOtpViewEnable != null) {
+                widget.isOtpViewEnable!(true);
+              }
             }
+            _otpPhoneFocus.requestFocus();
           },
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),

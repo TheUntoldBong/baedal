@@ -110,8 +110,15 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
       restController.changeSearchStatus(isUpdate: false);
     }
     final int? restaurantId = widget.restaurant?.id;
-    await restController.getRestaurantDetails(Restaurant(id: restaurantId), setNullBeforeLoad: true);
-    final int id = restaurantId ?? restController.restaurant!.id!;
+    await restController.getRestaurantDetails(
+      Restaurant(id: restaurantId),
+      setNullBeforeLoad: true,
+      slug: widget.slug,
+    );
+    final int? id = restaurantId ?? restController.restaurant?.id;
+    if (id == null) {
+      return;
+    }
     if (Get.find<CategoryController>().categoryList == null) {
       Get.find<CategoryController>().getCategoryList(true, search: '');
     }

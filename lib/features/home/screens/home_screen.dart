@@ -298,6 +298,7 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
           top: false,
           child: RefreshIndicator(
             onRefresh: () async {
+              await Get.find<LocationController>().autoDetectAndSelectNearestAddress(force: true);
               await Get.find<ReelsController>().getReelsList();
               await Get.find<HomeController>().getBannerList(true);
               await Get.find<CategoryController>().getCategoryList(true, search: '');
