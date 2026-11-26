@@ -139,6 +139,9 @@ class NotificationHelper {
   }
 
   static Future<void> showNotification(RemoteMessage message, FlutterLocalNotificationsPlugin fln) async {
+    if (GetPlatform.isIOS && message.notification != null) {
+      return;
+    }
     if(message.data.isNotEmpty) {
       String? title;
       String? body;

@@ -6,7 +6,7 @@ import 'package:stackfood_multivendor/util/images.dart';
 
 class AppConstants {
   static const String appName = 'Baedal';
-  static const double appVersion = 9.3; ///Flutter SDK: 3.47.2
+  static const double appVersion = 17.0; ///Flutter SDK: 3.47.2
 
   static const String fontFamily = 'DMSans';
   static const Color primaryColor = Color(0xFF20A7DB);

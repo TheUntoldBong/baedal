@@ -1036,6 +1036,7 @@ class CheckoutController extends GetxController implements GetxService {
   void _callback(bool isSuccess, String? message, String orderID, int? zoneID, double amount, double? maximumCodOrderAmount, bool fromCart, bool isCashOnDeliveryActive,
       String? contactNumber, bool isDineInOrder, bool isDeliveryOrder, {double proDiscount = 0, bool isPrePaidDigital = false}) async {
     if(isSuccess) {
+      RazorpayHelper.closePrePaymentDialogIfOpen();
       if(fromCart) {
       }
       setGuestAddress(null);

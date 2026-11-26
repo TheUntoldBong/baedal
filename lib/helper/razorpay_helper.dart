@@ -24,6 +24,7 @@ class RazorpayHelper {
 
   // Pre-payment flow state
   static bool _isPrePaymentFlow = false;
+  static bool _isPrePaymentDialogOpen = false;
   static PlaceOrderBodyModel? _placeOrderBody;
   static CheckoutController? _checkoutController;
   static int? _zoneId;
@@ -303,6 +304,15 @@ class RazorpayHelper {
     }
   }
 
+  static void closePrePaymentDialogIfOpen() {
+    if (_isPrePaymentDialogOpen) {
+      _isPrePaymentDialogOpen = false;
+      if (Get.isDialogOpen == true) {
+        Get.back();
+      }
+    }
+  }
+
   static void _handlePaymentSuccess(PaymentSuccessResponse response) async {
     debugPrint('Razorpay Payment Success: paymentId=${response.paymentId}, orderId=${response.orderId}');
 
@@ -312,13 +322,14 @@ class RazorpayHelper {
       _placeOrderBody!.razorpayOrderId = response.orderId;
       _placeOrderBody!.signature = response.signature;
 
+      _isPrePaymentDialogOpen = true;
       Get.dialog(
         const Center(child: CircularProgressIndicator()),
         barrierDismissible: false,
       );
 
       try {
-        await _checkoutController!.placeOrder(
+        final String orderID = await _checkoutController!.placeOrder(
           _placeOrderBody!,
           _zoneId,
           _placeOrderBody!.orderAmount ?? (_amount ?? 0),
@@ -327,13 +338,14 @@ class RazorpayHelper {
           _isCashOnDeliveryActive,
           proDiscount: _proDiscount,
         );
+        closePrePaymentDialogIfOpen();
+        if (orderID.isEmpty || orderID == '-1') {
+          showCustomSnackBar('Payment was received (ID: ${response.paymentId}), but order creation failed. Do not pay again; contact support for refund.');
+        }
       } catch (e) {
+        closePrePaymentDialogIfOpen();
         debugPrint('Error placing order after payment: $e');
         showCustomSnackBar('Payment was received (ID: ${response.paymentId}), but order creation encountered an error: $e. Please contact support.');
-      } finally {
-        if (Get.isDialogOpen == true) {
-          Get.back();
-        }
       }
       return;
     }
